@@ -1,24 +1,15 @@
-useDynLib(realized)
+#useDynLib(realized)
 import(zoo)
 import(xts)
 
-export(rAccumulation,
-       rCumSum,
-       rKernel,
-       rKernel.available,
-       rMarginal,
-       rRealisedVariance,
-       rRealizedVariance,
-       rScatterReturns,
-       rSignature,
-       rc.avg,
-       rc.hy,
-       rc.kernel,
-       rc.naive,
-       rc.timescale,
-       rc.zero,
-       rv.avg,
-       rv.kernel,
-       rv.naive,
-       rv.timescale,
-       rv.zero)
+export(
+minRV,
+medRV,
+rCov,
+rBPCov,
+rOWCov,
+makePsd,
+rTSCov,
+rRTSCov,
+rThresholdCov
+)#end exported functions
