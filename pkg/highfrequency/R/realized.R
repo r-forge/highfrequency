@@ -365,6 +365,474 @@ cfactor_RTSCV = function(eta=9){
   return( (c1+c2)/2 )
 }
 
+# Hayashi-Yoshida helper function:
+rc.hy <- function(x,y, period=1,align.by="seconds", align.period =1, cts = TRUE, makeReturns=FALSE, ...)
+{
+  align.period = .getAlignPeriod(align.period, align.by)
+  cdata <- .convertData(x, cts=cts, makeReturns=makeReturns)
+  x <- cdata$data
+  x.t <- cdata$milliseconds
+  
+  cdatay <- .convertData(y, cts=cts, makeReturns=makeReturns)
+  y <- cdatay$data
+  y.t <- cdatay$milliseconds
+  
+  
+  errorCheck <- c(is.null(x.t),is.na(x.t), is.null(y.t), is.na(y.t))
+  if(any(errorCheck))
+    stop("ERROR: Time data is not in x or y.")
+  
+  
+  sum(     .C("pcovcc", 
+              as.double(x), #a
+              as.double(rep(0,length(x)/(period*align.period)+1)),
+              as.double(y), #b
+              as.double(x.t), #a
+              as.double(rep(0,length(x)/(period*align.period)+1)), #a
+              as.double(y.t), #b
+              as.integer(length(x)), #na
+              as.integer(length(x)/(period*align.period)),
+              as.integer(length(y)), #na
+              as.integer(period*align.period),
+              ans = double(length(x)/(period*align.period)+1), 
+              COPY=c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE), 
+              PACKAGE="highfrequency")$ans)
+}
+
+ # 
+ # Realized variance calculation using a kernel estimator.
+ #
+ rv.kernel <- function(x,                             # Tick Data
+                       kernel.type = "rectangular",   # Kernel name (or number)
+                       kernel.param = 1,              # Kernel parameter (usually lags)
+                       kernel.dofadj = TRUE,          # Kernel Degree of freedom adjustment
+                       align.by="seconds",            # Align the tick data to [seconds|minutes|hours]
+                       align.period = 1,              # Align the tick data to this many [seconds|minutes|hours]
+                       cts = TRUE,                    # Calendar Time Sampling is used
+                       makeReturns = FALSE,            # Convert to Returns 
+                       type = NULL,                   # Deprectated
+                       adj = NULL,                    # Deprectated
+                       q = NULL, ...){                     # Deprectated
+   # Multiday adjustment: 
+   multixts = .multixts(x);
+   if(multixts){
+     result = apply.daily(x,rv.kernel,kernel.type,kernel.param,kernel.dofadj,
+                          align.by,align.period,cts,makeReturns,type,adj,q);
+     return(result)}
+   if(!multixts){ #Daily estimation:
+     
+     #
+     # Handle deprication
+     #
+     
+     
+     if(!is.null(type)){
+       warning("type is deprecated, use kernel.type")
+       kernel.type=type
+     }
+     if(!is.null(q)){
+       warning("q is deprecated, use kernel.param")
+       kernel.param=q
+     }
+     if(!is.null(adj)){
+       warning("adj is deprecated, use kernel.dofadj")
+       kernel.dofadj=adj
+     }          
+     align.period = .getAlignPeriod(align.period, align.by)         
+     cdata <- .convertData(x, cts=cts, makeReturns=makeReturns)
+     x <- cdata$data
+     x <- .alignReturns(x, align.period)
+     type <- .kernel.chartoint(kernel.type)
+     .C("kernelEstimator", as.double(x), as.double(x), as.integer(length(x)),
+        as.integer(kernel.param), as.integer(ifelse(kernel.dofadj, 1, 0)),
+        as.integer(type), ab=double(kernel.param + 1),
+        ab2=double(kernel.param + 1),
+        ans=double(1),PACKAGE="highfrequency")$ans
+   }
+ }
+ 
+ rc.kernel <- function(x,                             # Tick Data for first asset
+                       y,                             # Tick Data for second asset
+                       kernel.type = "rectangular",   # Kernel name (or number)
+                       kernel.param = 1,              # Kernel parameter (usually lags)
+                       kernel.dofadj = TRUE,          # Kernel Degree of freedom adjustment
+                       align.by="seconds",            # Align the tick data to [seconds|minutes|hours]
+                       align.period = 1,              # Align the tick data to this many [seconds|minutes|hours]
+                       cts = TRUE,                    # Calendar Time Sampling is used
+                       makeReturns = FALSE,           # Convert to Returns 
+                       type = NULL,                   # Deprectated
+                       adj = NULL,                    # Deprectated
+                       q = NULL,...){                 # Deprectated
+   #
+   # Handle deprication
+   #
+   if(!is.null(type)){
+     warning("type is deprecated, use kernel.type")
+     kernel.type=type
+   }
+   if(!is.null(q)){
+     warning("q is deprecated, use kernel.param")
+     kernel.param=q
+   }
+   if(!is.null(adj)){
+     warning("adj is deprecated, use kernel.dofadj")
+     kernel.dofadj=adj
+   }
+   
+   align.period = .getAlignPeriod(align.period, align.by)   
+   cdata <- .convertData(x, cts=cts, makeReturns=makeReturns)
+   
+   x <- cdata$data
+   x <- .alignReturns(x, align.period)
+   cdatay <- .convertData(y, cts=cts, makeReturns=makeReturns)
+   y <- cdatay$data
+   y <- .alignReturns(y, align.period)
+   type <- .kernel.chartoint(kernel.type)
+   .C("kernelEstimator", as.double(x), as.double(y), as.integer(length(x)),
+      as.integer(kernel.param), as.integer(ifelse(kernel.dofadj, 1, 0)),
+      as.integer(type), ab=double(kernel.param + 1),
+      ab2=double(kernel.param + 1),
+      ans=double(1),PACKAGE="highfrequency")$ans
+ }
+ 
+ rKernel <- function(x,type=0)
+ {
+   type <- .kernel.chartoint(type)
+   .C("justKernel", x=as.double(x),type= as.integer(type), ans=as.double(0),PACKAGE="realized")$ans
+ }
+ 
+ .kernel.chartoint <- function(type)
+ {
+   if(is.character(type))
+   {
+     ans <- switch(casefold(type), 
+                   rectangular=0,
+                   bartlett=1,
+                   second=2,
+                   epanechnikov=3,
+                   cubic=4,
+                   fifth=5,
+                   sixth=6,
+                   seventh=7,
+                   eighth=8,
+                   parzen=9,
+                   th=10,
+                   mth=11,
+                   tukeyhanning=10,
+                   modifiedtukeyhanning=11,
+                   -99)
+     if(ans==-99)
+     { 
+       warning("Invalid Kernel, using Bartlet")
+       1
+     }
+     else
+     {
+       ans     
+     }
+   }
+   else
+   {
+     type
+   }
+ }
+ 
+ rKernel.available <- function()
+ {
+   c("Rectangular", 
+     "Bartlett",
+     "Second",
+     "Epanechnikov",
+     "Cubic",
+     "Fifth",
+     "Sixth",
+     "Seventh",
+     "Eighth",
+     "Parzen",
+     "TukeyHanning",
+     "ModifiedTukeyHanning")
+ }
+  
+ #########################################################################
+ #
+ # Utility Functions from realized package Scott Payseur
+ #
+ #########################################################################
+.alignedAccum <- function(x,y, period, cum=TRUE, makeReturns...)
+{
+  x<-.accum.naive(x,x, period)
+  y<-.accum.naive(y,y, period)
+  if(cum)
+  {
+    ans <- cumsum(x*y)
+  }
+  else
+  {
+    ans <- x*y     
+  }
+  ans
+}
+
+
+.accum.naive <- function(x,y, period, ...)
+{
+  .C("rv", 
+     as.double(x), #a
+     as.double(y), #b
+     as.integer(length(x)), #na
+     as.integer(period), #period 
+     tmpa = as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+     as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+     as.integer(length(x)/period), #tmpn
+     ans = double(1), 
+     COPY=c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE), 
+     PACKAGE="highfrequency")$tmpa     
+}
+
+
+.alignReturns <- function(x, period, ...)
+{
+  .C("rv", 
+     as.double(x), #a
+     as.double(x), #b
+     as.integer(length(x)), #na
+     as.integer(period), #period 
+     tmpa = as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+     as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+     as.integer(length(x)/period), #tmpn
+     ans = double(1), 
+     COPY=c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE), 
+     PACKAGE="highfrequency")$tmpa     
+}
+
+.getAlignPeriod <- function(align.period, align.by)
+{   
+  align.by <- gsub("(^ +)|( +$)", "",align.by) # Trim White
+  
+  if(casefold(align.by)=="min" || casefold(align.by)=="mins" ||casefold(align.by)=="minute"||casefold(align.by)=="minutes"||casefold(align.by)=="m"){
+    ans <- align.period * 60
+  }
+  if(casefold(align.by)=="sec" || casefold(align.by)=="secs" ||casefold(align.by)=="second"||casefold(align.by)=="seconds"||casefold(align.by)=="s"||casefold(align.by)==""){
+    ans <- align.period
+  }
+  if(casefold(align.by)=="hour" || casefold(align.by)=="hours" ||casefold(align.by)=="h"){
+    ans <- align.period * 60 * 60
+  }
+  return(ans)
+}
+
+
+.alignIndices <- function(x, period, ...)
+{
+  .C("rvperiod", 
+     as.double(x), #a
+     as.double(x), #b
+     as.integer(length(x)), #na
+     as.integer(period), #period 
+     tmpa = as.double(rep(max(x),as.integer(length(x)/period +1))), #tmp
+     as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+     as.integer(length(x)/period), #tmpn
+     ans = double(1), 
+     COPY=c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE), 
+     PACKAGE="highfrequency")$tmpa     
+}
+
+.multixts <- function( x, y=NULL)
+{ 
+  if(is.null(y)){
+    test = is.xts(x) && (ndays(x)!=1);
+    return(test);}
+  if(!is.null(y)){
+    test = (is.xts(x) && (ndays(x)!=1)) || ( ndays(y)!=1 && is.xts(y) );
+    if( test ){
+      test1 = dim(y) == dim(x);
+      if(!test1){ warning("Please make sure x and y have the same dimensions") }
+      if(test1){  test = list( TRUE, cbind(x,y) ); return(test) }
+    }
+  }
+}      
+
+.convertData <- function(x, cts = TRUE, millisstart=NA, millisend=NA, makeReturns=FALSE)
+{
+  if(is.null(x))
+  {
+    return(NULL)
+  }
+  if("realizedObject" %in% class(x))
+  {
+    return(x)
+  }
+  if(is.null(version$language)) #splus
+  {
+    if("timeSeries" %in% class(x))
+    {
+      x <- x[!is.na(x[,1]),1]
+      if(cts)
+      {
+        return(ts2realized(x, millisstart=millisstart, millisend=millisend, make.returns=makeReturns)$cts)
+      }
+      else
+      {
+        return(ts2realized(x, millisstart=millisstart, millisend=millisend, make.returns=makeReturns)$tts)
+      }
+      #list(milliseconds = positions(x)@.Data[[2]], data = matrix(seriesData(x), ncol=1))
+    }
+  }
+  
+  if("xts" %in% class(x))
+  {
+    xtmp <- x
+    x <- list() 
+    x$data <- as.numeric(xtmp[,1])
+    
+    x$milliseconds <- (as.POSIXlt(time(xtmp))$hour*60*60 + as.POSIXlt(time(xtmp))$min*60 + as.POSIXlt(time(xtmp))$sec )*1000
+    if(is.na(millisstart))
+    {
+      millisstart = x$milliseconds[[1]]
+    }
+    if(is.na(millisend))
+    {
+      millisend = x$milliseconds[[length(x$milliseconds)]]
+    }
+    
+    cat(paste("xts -> realizedObject [", as.character(time(xtmp[1])), " :: ", as.character(time(xtmp[length(x$milliseconds)])), "]", sep=""),"\n")
+  }
+  
+  if(is.na(millisstart))
+  {
+    millisstart=34200000
+  }
+  if(is.na(millisend))
+  {
+    millisend=57600000
+  }    
+  if("list" %in% class(x))
+  {
+    if(sum(names(x) == c("tts", "cts")) == 2) #realized obj  
+    {
+      if(cts)
+      {
+        return(x$cts)
+      }
+      else
+      {
+        return(x$tts)
+      }
+    }
+    if(sum(names(x) == c("data", "milliseconds")) == 2) 
+    {
+      if(makeReturns)
+      {                                           # only works on non cts prices
+        errcheck <- try(.getReturns(.sameTime(x$data, x$milliseconds)))
+        if(class(errcheck) != "Error")
+        {
+          x$data <- errcheck
+          x$milliseconds <- intersect(x$milliseconds,x$milliseconds)
+        }
+        else
+        {
+          warning("It appears that these are already returns.  Not creating returns")
+        }
+      }          
+      else
+      {
+        x$data <- .sameTime(x$data, x$milliseconds)
+        x$milliseconds <- intersect(x$milliseconds,x$milliseconds)
+      }          
+      if(cts)
+      {
+        toret <- list(data=.toCts(x=x$data, millis=intersect(x$milliseconds,x$milliseconds), millisstart=millisstart, millisend=millisend),
+                      milliseconds=(((millisstart/1000)+1):(millisend/1000))*1000)
+        return(toret)
+      }
+      else
+      {
+        toret <- list(data=x$data, 
+                      milliseconds=intersect(x$milliseconds,x$milliseconds))
+        return(toret)
+      }
+    }
+  }
+  
+  
+  if("timeSeries" %in% class(x))
+  {
+    stop("R timeSeries not implmented yet. Convert to realized object")
+  }
+  return(list(milliseconds = 1:dim(as.matrix(x))[[1]], data = as.matrix(x)))  # not an object, fake the milliseconds and return
+}
+
+.getReturns <- function(x)
+{
+  x <- as.numeric(x)
+  n <- length(x)[[1]]
+  return(log(x[2:n]) - log(x[1:(n-1)]))
+}
+
+.sameTime <- function(x, millis)
+{
+  .C("sametime", 
+     as.double(x), #a
+     as.integer(length(x)), #na
+     as.integer(millis), #millis
+     ans = double(length(union(millis,millis))), #tts
+     COPY=c(FALSE,FALSE,FALSE,TRUE), 
+     PACKAGE="highfrequency")$ans
+}
+
+
+data.toCts <- function(x, millis, millisstart=34200000, millisend=57600000)
+{
+  .toCts(x=x, millis=millis, millisstart=millisstart, millisend=millisend)
+}
+
+.toCts <- function(x, millis, millisstart=34200000, millisend=57600000)
+{
+  .C("tocts", 
+     as.double(x), #a
+     as.integer(length(x)),
+     as.integer(millis), #millis
+     as.integer(millisstart),
+     as.integer(millisend),
+     ans = double(((millisend-millisstart)/1000)), #cts
+     COPY=c(FALSE,FALSE,FALSE,FALSE,TRUE), 
+     PACKAGE="highfrequency")$ans
+}
+
+data.toReturns <- function(x)
+{
+  x <- as.numeric(x)   
+  n <- length(x)
+  log(x[2:n]) - log(x[1:(n-1)])
+}
+ 
+ ts2realized <- function(x, make.returns=TRUE,millisstart=34200000, millisend=57600000)
+ {
+   warning("SPLUS is no longer supported.")
+   #     thedata <- data.sameTime(as.numeric(as.matrix(x@data)), .ts2millis(x))
+   
+   #    if(make.returns)
+   #    {
+   
+   #          thedata <- .getReturns(thedata)
+   
+   #          tts <- list(data=as.numeric(thedata), milliseconds=intersect(.ts2millis(x),.ts2millis(x))[-1])
+   #          cts <- list(data=.toCts(x=as.numeric(thedata), millis=intersect(.ts2millis(x),.ts2millis(x)), millisstart=millisstart, millisend=millisend),
+   #               milliseconds=(((millisstart/1000)+1):(millisend/1000))*1000)
+   #    }
+   #    else
+   #    {
+   #          tts <- list(data=as.numeric(thedata), milliseconds=intersect(.ts2millis(x),.ts2millis(x)))
+   #          cts <- list(data=.toCts(x=as.numeric(thedata), millis=intersect(.ts2millis(x),.ts2millis(x)), millisstart=millisstart, millisend=millisend),
+   #               milliseconds=(((millisstart/1000)+1):(millisend/1000))*1000)
+   
+   
+   #    }
+   #     ans <- list(tts=tts, cts=cts)     
+   #     ans
+ }
+ 
+ 
 # Make positive definite
 makePsd = function(S,method="covariance"){
   if(method=="correlation" & !any(diag(S)<=0) ){
@@ -787,14 +1255,111 @@ rThresholdCov = function( rdata, cor=FALSE, align.by=NULL, align.period=NULL, ma
     sdmatrix = sqrt(diag(diag(covariance)));
     rcor = solve(sdmatrix)%*%covariance%*%solve(sdmatrix);
     return(rcor)}
+  } 
+} 
+
+## Hayashi Yoshida covariance estimator
+rHYCov = function(rdata, cor = FALSE, period = 1, align.by = "seconds", align.period = 1, cts = TRUE, makeReturns = FALSE, makePsd=TRUE, ...) 
+{
+  if (!is.list(rdata)){
+    stop('The rdata input is not a list. Please provide a list as input for this function. Each list-item should contain the series for one asset.')
+  }else{
+    n = length(rdata)
+    if(n == 1){
+        stop('Please provide a list with multiple list-items as input. You cannot compute covariance from a single price series.')      
+      }
+  }  
+    multixts = .multixts(rdata[[1]]); 
+    if(multixts){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}
+  
+    cov = matrix(rep(0, n * n), ncol = n);
+    diagonal = c();  
+     for (i in 1:n){ 
+      diagonal[i] = rCov( rdata[[i]], align.by = align.by, align.period = align.period,makeReturns=makeReturns ); 
+     } 
+    diag(cov) = diagonal;
+    for (i in 2:n){
+      for (j in 1:(i - 1)){
+       cov[i, j] = cov[j, i] = rc.hy( x=rdata[[i]], y=rdata[[j]], period = period,align.by=align.by, 
+                                     align.period = align.period, cts = cts, makeReturns = makeReturns);       
+      }
+    }
+  
+    if (cor == FALSE) {
+      if (makePsd == TRUE) {
+        cov = makePsd(cov)
+      }
+      return(cov)
+    }
+    if (cor == TRUE){
+      invsdmatrix = try(solve(sqrt(diag(diag(cov)))), silent = F)
+      if (!inherits(invsdmatrix, "try-error")) {
+        rcor = invsdmatrix %*% cov %*% invsdmatrix
+        if (makePsd == TRUE) {
+          rcor = makePsd(rcor)
+        }
+        return(rcor)
+      }
+    }
+}  
+
+## Kernel Covariance Estimator: 
+rKernelCov = function( rdata, cor=FALSE, kernel.type = "rectangular", kernel.param = 1, 
+                       kernel.dofadj = TRUE, align.by = "seconds", align.period = 1, 
+                       cts = TRUE, makeReturns = FALSE, type = NULL, adj = NULL, 
+                       q = NULL, ...)
+{
+  if(!is.list(rdata)){ # In case of only one stock this makes sense
+     if(is.null(dim(rdata))){  n = 1
+     }else{ n = dim(rdata)[2] }
+     if( n == 1 ){ result = rv.kernel(rdata, cor=cor, kernel.type = kernel.type, kernel.param = kernel.param, kernel.dofadj = kernel.dofadj, 
+                                      align.by = align.by, align.period = align.period, cts = cts, makeReturns = makeReturns, 
+                                      type = type, adj = adj, q = q)}
+     if( n >  1 ){ stop("Please provide a list with one list-item per stock as input.")  }    
+     return(result)    
+     #stop('The rdata input is not a list. Please provide a list as input for this function. Each list-item should contain the series for one asset.')
+    }else{
+    n = length(rdata);
+    if(n == 1){
+      result = rv.kernel(rdata[[1]], cor=cor,kernel.type = kernel.type, kernel.param = kernel.param, kernel.dofadj = kernel.dofadj, 
+                         align.by = align.by, align.period = align.period, cts = cts, makeReturns = makeReturns, 
+                         type = type, adj = adj, q = q); return(result);
+              }
+    if( n>1 ){
+    
+     multixts = .multixts(rdata[[1]]); 
+     if(multixts){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}
+  
+     cov = matrix(rep(0, n * n), ncol = n);
+     diagonal = c();  
+     for( i in 1:n ){ 
+      diagonal[i] = rv.kernel(rdata[[i]], cor=cor,kernel.type = kernel.type, kernel.param = kernel.param, kernel.dofadj = kernel.dofadj, 
+                              align.by = align.by, align.period = align.period, cts = cts, makeReturns = makeReturns, 
+                              type = type, adj = adj, q = q);        
+     } 
+     diag(cov) = diagonal;
+      for (i in 2:n){
+         for (j in 1:(i - 1)){
+         cov[i, j] = cov[j, i] = rc.kernel(x = rdata[[i]], y = rdata[[j]], kernel.type = kernel.type, kernel.param = kernel.param, 
+                                  kernel.dofadj = kernel.dofadj, align.by = align.by, align.period = align.period, 
+                                  cts = cts, makeReturns = makeReturns, type = type, adj = adj,q = q);   
+      }
+    }
+  
+  if(cor == FALSE){
+    cov = makePsd(cov);
+    return(cov)
   }
+  if(cor == TRUE){
+    invsdmatrix = try(solve(sqrt(diag(diag(cov)))), silent = F)
+    if (!inherits(invsdmatrix, "try-error")) {
+      rcor = invsdmatrix %*% cov %*% invsdmatrix
+      return(rcor)
+    }
+  }
+ }
+ }
 }
 
-
-
-
-
-
-
-
-
+ 
+ 

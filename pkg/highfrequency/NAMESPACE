@@ -1,6 +1,6 @@
-#useDynLib(realized)
-import(zoo)
-import(xts)
+useDynLib(highfrequency);
+import(zoo);
+import(xts);
 
 export(
 minRV,
@@ -11,5 +11,8 @@ rOWCov,
 makePsd,
 rTSCov,
 rRTSCov,
-rThresholdCov
+rThresholdCov,
+rHYCov,
+rKernelCov,
+rKernel.available
 )#end exported functions

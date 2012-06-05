@@ -5,12 +5,11 @@
 
 \description{
 
-Function returns the robust two time scale covariance matrix proposed in Boudt and Zhang (2010).
- Unlike the \code{\link{ROWCov}}, but similarly to the \code{\link{thresholdCov}}, the rRTSCov uses univariate jump detection rules 
- to truncate the effect of jumps on the covariance
+Function returns the robust two time scale covariance matrix proposed in Boudt and Zhang (2010). 
+ Unlike the \code{\link{rOWCov}}, but similarly to the \code{\link{rThresholdCov}}, the rRTSCov uses  univariate jump detection rules 
+ to truncate the effect of jumps on the covariance 
 estimate. By the use of two time scales, this covariance estimate 
-is not only robust to price jumps, but also to microstructure noise and non-synchronic trading.
-
+is not only robust to price jumps, but also to microstructure noise and non-synchronic trading. 
 }
 
 \usage{
