@@ -23,12 +23,15 @@ rHYCov(rdata, cor = FALSE, period = 1, align.by = "seconds",
 \emph{Bernoulli}, 11:359-379, 2005. }
 \author{ Scott Payseur }
 \examples{
-#data(msft.real.cts)
-#data(ge.real.cts)
-
-# Hayashi-Yoshida realized covariance for CTS aligned at one second returns at 
-# 600 subgrids (10 minutes).
-#rHYCov(x = msft.real.cts[[1]], y = ge.real.cts[[1]], period = 600)
-}
+ # Average Realized Kernel Variance/Covariance for CTS aligned at one minute returns at 
+ # 5 subgrids (5 minutes).
+ data(lltc.xts); 
+ data(sbux.xts); 
+  # Multivariate:
+ rHYCov = rHYCov( rdata = list(lltc.xts,sbux.xts), period = 5, align.by ="minutes", 
+                   align.period=5, makeReturns=FALSE); 
+ rHYCov 
+ #Note: for the diagonal elements the rCov is used.
+} 
 
 \keyword{volatility}

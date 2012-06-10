@@ -29,7 +29,7 @@ medRV(rdata,align.by=NULL,align.period=NULL,makeReturns=FALSE,...)
 
 \section{Details}{
 
-The medRV belongs to the class of realized volatility measures in RTAQ 
+The medRV belongs to the class of realized volatility measures in this package  
 that use the series of high-frequency returns \eqn{r_{t,i}} of a day \eqn{t} 
 to produce an ex post estimate of the realized volatility of that day \eqn{t}. 
 medRV is designed to be robust to price jumps. 
@@ -57,5 +57,11 @@ Journal of Econometrics 159 (2), 276-288.
 }
 
 \author{ Jonathan Cornelissen and Kris Boudt}
+\examples{
+ data(sample_tdata);  
+ medrv = medRV( rdata = sample_tdata$PRICE, align.by ="minutes", 
+            align.period =5, makeReturns=TRUE); 
+ medrv 
+}
 
-\keyword{ volatility}
+\keyword{volatility}

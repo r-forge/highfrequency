@@ -552,7 +552,75 @@ rc.hy <- function(x,y, period=1,align.by="seconds", align.period =1, cts = TRUE,
      "TukeyHanning",
      "ModifiedTukeyHanning")
  }
-  
+ 
+ 
+ ## REalized Variance: Average subsampled
+ rv.avg <- function(x, period, align.by="seconds", align.period=1, cts=TRUE, makeReturns=FALSE, ...)
+ { 
+   # Multiday adjustment: 
+   multixts = .multixts(x);
+   if(multixts){
+     result = apply.daily(x,rv.avg,period,align.by,align.period,cts,makeReturns);
+     return(result)}
+   if(!multixts){ #Daily estimation:
+     align.period = .getAlignPeriod(align.period, align.by)
+     x<- .alignReturns(.convertData(x, cts=cts, makeReturns=makeReturns)$data, align.period)
+     mean(.rv.subsample(x, period, ...))
+   }  
+ } 
+ 
+ rc.avg <- function(x, y,  period, align.by="seconds", align.period=1, cts=TRUE, makeReturns=FALSE, ...)
+ {
+   align.period = .getAlignPeriod(align.period, align.by)
+   x<- .alignReturns(.convertData(x, cts=cts, makeReturns=makeReturns)$data, align.period)
+   y<- .alignReturns(.convertData(y, cts=cts, makeReturns=makeReturns)$data, align.period)
+   mean(.rc.subsample(x, y, period))
+ }
+ 
+ .rv.subsample <- function(x, period, cts=TRUE, makeReturns=FALSE,...)
+ {
+   cdata <- .convertData(x, cts=cts, makeReturns=makeReturns)
+   x <- cdata$data
+   
+   .C("subsample", 
+      
+      as.double(x), #a
+      as.double(x), #na
+      as.integer(length(x)), #na
+      as.integer(length(x)/period),       #m
+      as.integer(period), #period 
+      as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+      as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+      as.integer(length(x)/period), #tmpn
+      ans = double(period), 
+      COPY=c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE), 
+      PACKAGE="highfrequency")$ans
+ }
+ 
+ 
+ .rc.subsample <- function(x, y, period, cts=TRUE, makeReturns=FALSE, ... )
+ {
+   cdata <- .convertData(x, cts=cts, makeReturns=makeReturns)
+   x <- cdata$data
+   
+   cdatay <- .convertData(y, cts=cts, makeReturns=makeReturns)
+   y <- cdatay$data
+   
+   .C("subsample", 
+      as.double(x), #a
+      as.double(y), #na
+      as.integer(length(x)), #na
+      as.integer(length(x)/period),       #m
+      as.integer(period), #period 
+      as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+      as.double(rep(0,as.integer(length(x)/period +1))), #tmp
+      as.integer(length(x)/period), #tmpn
+      ans = double(period), 
+      COPY=c(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE), 
+      PACKAGE="highfrequency")$ans               
+ }
+ 
+ 
  #########################################################################
  #
  # Utility Functions from realized package Scott Payseur
@@ -873,7 +941,71 @@ makePsd = function(S,method="covariance"){
   }
   return(result);
 }
-
+ 
+# Aggregation function: FAST previous tick aggregation
+ .aggregatets = function (ts, on = "minutes", k = 1) 
+ {
+   if (on == "secs" | on == "seconds") {
+     secs = k
+     tby = paste(k, "sec", sep = " ")
+   } 
+   if (on == "mins" | on == "minutes") {
+     secs = 60 * k
+     tby = paste(60 * k, "sec", sep = " ")
+   } 
+   if (on == "hours"){
+     secs = 3600 * k;
+     tby = paste(3600 * k, "sec", sep = " ");
+   } 
+   g = base:::seq(start(ts), end(ts), by = tby);
+   rawg = as.numeric(as.POSIXct(g, tz = "GMT"));
+   newg = rawg + (secs - rawg%%secs);
+   g    = as.POSIXct(newg, origin = "1970-01-01",tz = "GMT");
+   ts3 = na.locf(merge(ts, zoo(, g)))[as.POSIXct(g, tz = "GMT")];
+   return(ts3)
+ } #Very fast and elegant way to do previous tick aggregation :D!
+ 
+ #Make Returns: 
+ makeReturns = function (ts) 
+ {
+   l = dim(ts)[1]
+   x = matrix(as.numeric(ts), nrow = l)
+   x[(2:l), ] = log(x[(2:l), ]) - log(x[(1:(l - 1)), ])
+   x[1, ] = rep(0, dim(ts)[2])
+   x = xts(x, order.by = index(ts))
+   return(x);
+ }
+ 
+ #Refresh Time:
+ refreshTime = function (pdata) 
+ {
+   dim = length(pdata)
+   lengths = rep(0, dim + 1)
+   for (i in 1:dim) {
+     lengths[i + 1] = length(pdata[[i]])
+   }
+   minl = min(lengths[(2:(dim + 1))])
+   lengths = cumsum(lengths)
+   alltimes = rep(0, lengths[dim + 1])
+   for (i in 1:dim) {
+     alltimes[(lengths[i] + 1):lengths[i + 1]] = as.numeric(as.POSIXct(index(pdata[[i]]), 
+                                                                       tz = "GMT"))
+   }
+   x = .C("refreshpoints", as.integer(alltimes), as.integer(lengths), 
+          as.integer(rep(0, minl)), as.integer(dim), as.integer(0), 
+          as.integer(rep(0, minl * dim)), as.integer(minl))
+   newlength = x[[5]]
+   pmatrix = matrix(ncol = dim, nrow = newlength)
+   for (i in 1:dim) {
+     selection = x[[6]][((i - 1) * minl + 1):(i * minl)]
+     pmatrix[, i] = pdata[[i]][selection[1:newlength]]
+   }
+   time = as.POSIXct(x[[3]][1:newlength], origin = "1970-01-01", 
+                     tz = "GMT")
+   resmatrix = xts(pmatrix, order.by = time)
+   return(resmatrix)
+ }
+ 
  ########################################################
  # 1 Univariate measures : 
  ########################################################
@@ -888,7 +1020,7 @@ minRV <- function(rdata,align.by=NULL,align.period=NULL,makeReturns=FALSE,...){
     return(result)} 
   if(!multixts){
     if((!is.null(align.by))&&(!is.null(align.period))){
-      rdata = aggregatets(rdata, on=align.by, k=align.period);
+      rdata = .aggregatets(rdata, on=align.by, k=align.period);
     } 
     if(makeReturns){  rdata = makeReturns(rdata) }  
     q = as.zoo(abs(as.numeric(rdata))); #absolute value
@@ -910,7 +1042,7 @@ medRV <- function(rdata,align.by=NULL,align.period=NULL,makeReturns=FALSE,...){
     return(result)} 
   if(!multixts){
     if((!is.null(align.by))&&(!is.null(align.period))){
-      rdata = aggregatets(rdata, on=align.by, k=align.period);
+      rdata = .aggregatets(rdata, on=align.by, k=align.period);
     } 
     if(makeReturns){  rdata = makeReturns(rdata) }  
     q = abs(as.numeric(rdata)); #absolute value
@@ -941,7 +1073,7 @@ rCov = function(rdata, cor=FALSE, align.by=NULL,align.period=NULL, makeReturns =
     return(result)} 
   if(!multixts){ #single day code
     if((!is.null(align.by))&&(!is.null(align.period))){
-      rdata = aggregatets(rdata, on=align.by, k=align.period);
+      rdata = .aggregatets(rdata, on=align.by, k=align.period);
     } 
     if(makeReturns){  rdata = makeReturns(rdata) }  
   if (is.null(dim(rdata))) {  n = 1
@@ -983,7 +1115,7 @@ rBPCov = function( rdata, cor=FALSE, align.by=NULL,align.period=NULL, makeReturn
     return(result)} 
   if(!multixts){ #single day code
     if((!is.null(align.by))&&(!is.null(align.period))){
-      rdata = aggregatets(rdata, on=align.by, k=align.period);
+      rdata = .aggregatets(rdata, on=align.by, k=align.period);
     } 
     if(makeReturns){  rdata = makeReturns(rdata) }  
     if (is.null(dim(rdata))) {  n = 1
@@ -1034,8 +1166,8 @@ rOWCov = function (rdata, cor=FALSE, align.by=NULL,align.period=NULL, makeReturn
       
     # Aggregate:
     if((!is.null(align.by))&&(!is.null(align.period))){
-      rdata = aggregatets(rdata, on=align.by, k=align.period);
-      seasadjR = aggregatets(seasadjR, on=align.by, k=align.period);
+      rdata = .aggregatets(rdata, on=align.by, k=align.period);
+      seasadjR = .aggregatets(seasadjR, on=align.by, k=align.period);
     }     
     if( makeReturns ){ rdata = makeReturns(rdata); 
     if( !is.null(seasadjR) ){ seasadjR = makeReturns(seasadjR)} }
@@ -1236,7 +1368,7 @@ rThresholdCov = function( rdata, cor=FALSE, align.by=NULL, align.period=NULL, ma
     return(result)} 
   if( !multixts ){ #single day code
     if((!is.null(align.by))&&(!is.null(align.period))){
-       rdata = aggregatets(rdata, on=align.by, k=align.period);
+       rdata = .aggregatets(rdata, on=align.by, k=align.period);
     } 
     if(makeReturns){ rdata = makeReturns(rdata) }  
         
@@ -1361,5 +1493,46 @@ rKernelCov = function( rdata, cor=FALSE, kernel.type = "rectangular", kernel.par
  }
 }
 
- 
- 
+## Average subsample estimator: 
+rAVGCov = function( rdata, cor = FALSE, period = 1, align.by = "seconds", align.period = 1, cts = TRUE, makeReturns = FALSE, ...){
+  if (!is.list(rdata)){ 
+     if(is.null(dim(rdata))){  n = 1
+     }else{ n = dim(rdata)[2] }
+     if( n == 1 ){ result = rv.avg( rdata, period=period, align.by = align.by, align.period = align.period, cts = cts, makeReturns = makeReturns ); return(result)  }
+     if( n >  1 ){ stop('The rdata input is not a list. Please provide a list as input for this function. Each list-item should contain the series for one asset.') }
+  }
+  if(is.list(rdata)){
+    n = length(rdata)
+    if( n == 1 ){ result = rv.avg(rdata[[1]], period=period, align.by = align.by, align.period = align.period, cts = cts, makeReturns = makeReturns ); return(result) }
+    if( n > 1){
+    multixts = .multixts(rdata[[1]]); 
+    if(multixts){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}
+  
+  cov = matrix(rep(0, n * n), ncol = n);
+  diagonal = c(); 
+  for(i in 1:n){ 
+    diagonal[i] = rv.avg( rdata[[i]], period=period, align.by = align.by, align.period = align.period, cts = cts, makeReturns = makeReturns );
+  } 
+  diag(cov) = diagonal;
+  for (i in 2:n){
+    for (j in 1:(i - 1)){
+      cov[i, j] = cov[j, i] = rc.avg( x=rdata[[i]], y=rdata[[j]], period=period, align.by = align.by, 
+                                      align.period = align.period, cts = cts, makeReturns = makeReturns);       
+    }
+  }
+  
+  if (cor == FALSE) {
+      cov = makePsd(cov)
+    return(cov)
+  }
+  if (cor == TRUE){
+    invsdmatrix = try(solve(sqrt(diag(diag(cov)))), silent = F)
+    if (!inherits(invsdmatrix, "try-error")) {
+      rcor = invsdmatrix %*% cov %*% invsdmatrix
+        rcor = makePsd(rcor)
+      return(rcor)
+    }
+  }
+ } #List-length > 1
+ } #If-list condition
+}  #end rAVGCov

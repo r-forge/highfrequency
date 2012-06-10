@@ -19,4 +19,4 @@ Ole E. Barndorff-Nielsen, Peter Reinhard Hansen, Asger Lunde, and Neil Shephard.
 \examples{
 rKernel.available()
 }
-\keyword{methods}
+\keyword{volatility}

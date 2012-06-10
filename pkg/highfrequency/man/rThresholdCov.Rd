@@ -53,4 +53,14 @@ parts and the co-jumps given discrete observations. Mimeo.
 
 \author{ Jonathan Cornelissen and Kris Boudt}
 
-\keyword{ volatility}
+\examples{
+ # Realized threshold  Variance/Covariance: 
+ data(lltc.xts); 
+ data(sbux.xts); 
+ 
+ # Multivariate:
+ rcThreshold = rThresholdCov(cbind(lltc.xts,sbux.xts), align.by="minutes",align.period=1); 
+ rcThreshold  
+} 
+
+\keyword{volatility}

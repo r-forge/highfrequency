@@ -49,6 +49,21 @@ Barndorff-Nielsen, O. and N. Shephard (2004). Measuring the impact of
 jumps in multivariate price processes using bipower covariation. Discussion
 paper, Nuffield College, Oxford University.}
 
-\author{ Jonathan Cornelissen and Kris Boudt}
+\author{Jonathan Cornelissen and Kris Boudt}
+\examples{
+ # Realized Bipower Variance/Covariance for CTS aligned   
+ # at 5 minutes.
+ data(sample_tdata); 
+ data(sample_5minprices_jumps);
+ 
+ # Univariate: 
+ rbpv = rBPCov( rdata = sample_tdata$PRICE, align.by ="minutes", 
+                    align.period =5, makeReturns=TRUE); 
+ rbpv 
+ 
+ # Multivariate: 
+ rbpc = rBPCov( rdata = sample_5minprices_jumps['2010-01-04'], makeReturns=TRUE,makePsd=TRUE); 
+ rbpc
+}
 
 \keyword{ volatility}

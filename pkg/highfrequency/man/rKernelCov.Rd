@@ -31,7 +31,7 @@ rKernelCov(rdata, cor = FALSE, kernel.type = "rectangular", kernel.param = 1,
 }
 
 \details{
-The different types of kernels can be found using \code{ \link{ rKernel.available}}.
+The different types of kernels can be found using \code{\link{rKernel.available}}.
 }
 \value{
 Kernel estimate of realized covariance.
@@ -47,16 +47,22 @@ P. Hansen and A. Lunde. Realized variance and market microstructure noise. \emph
 
 \seealso{\code{\link{rKernel.available}}}
 
-\examples{
-#data(msft.real.cts)
-#data(ge.real.cts)
-
-# kernel realized variance for CTS aligned at one minute returns
-data(sbux.xts)
-data(lltc.xts)
-
-# kernel realized variance for CTS aligned at one minute returns
-rKernelCov(x = sbux.xts,y = lltc.xts, kernel.param=1, kernel.type="bartlett", align.by ="seconds", align.period=60)
+\examples{ 
+ # Average Realized Kernel Variance/Covariance for CTS aligned at one minute returns at 
+ # 5 subgrids (5 minutes).
+ data(sample_tdata); 
+ data(lltc.xts); 
+ data(sbux.xts); 
+ 
+ # Univariate: 
+ rvKernel = rKernelCov( rdata = sample_tdata$PRICE, period = 5, align.by ="minutes", 
+                   align.period=5, makeReturns=TRUE); 
+ rvKernel 
+ 
+ # Multivariate:
+ rcKernel = rKernelCov( rdata = list(lltc.xts,sbux.xts), period = 5, align.by ="minutes", 
+                   align.period=5, makeReturns=FALSE); 
+ rcKernel 
 }
 
 \keyword{volatility}

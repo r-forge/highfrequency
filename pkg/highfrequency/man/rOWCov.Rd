@@ -72,8 +72,22 @@ a zero weight, due to which the rOWCov can have a low finite sample efficiency i
 Boudt, K., C. Croux, and S. Laurent (2008). Outlyingness weighted covariation. Mimeo.
 }
 
-\author{ Jonathan Cornelissen and Kris Boudt}
+\author{Jonathan Cornelissen and Kris Boudt}
 
-\keyword{ volatility}
-%cd C:\package\TradeAnalytics\pkg\RTAQ\man
-%R CMD Rdconv --type=html --output=sample_5minprices.htm sample_5minprices.Rd
+\examples{
+ # Realized Outlyingness Weighted Variance/Covariance for CTS aligned   
+ # at 5 minutes.
+ data(sample_tdata); 
+ data(sample_5minprices_jumps);
+ 
+ # Univariate: 
+ rvoutw = rOWCov( rdata = sample_tdata$PRICE, align.by ="minutes", 
+                    align.period =5, makeReturns=TRUE); 
+ rvoutw 
+ 
+ # Multivariate: 
+ rcoutw = rOWCov( rdata = sample_5minprices_jumps['2010-01-04'], makeReturns=TRUE); 
+ rcoutw
+}
+
+\keyword{volatility}

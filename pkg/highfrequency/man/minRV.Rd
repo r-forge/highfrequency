@@ -33,11 +33,18 @@ Then, the minRV is given by
 numeric
 }
 
-\references{
+\references{ 
 Andersen, T. G., D. Dobrev, and E. Schaumburg (2009). Jump-robust volatility 
 estimation using nearest neighbor truncation. NBER Working Paper No.
 15533.}
 
 \author{ Jonathan Cornelissen and Kris Boudt}
+\examples{
+ data(sample_tdata); 
+ 
+ minrv = minRV( rdata = sample_tdata$PRICE, align.by ="minutes", 
+            align.period =5, makeReturns=TRUE); 
+ minrv 
+}
 
 \keyword{ volatility}

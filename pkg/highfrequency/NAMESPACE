@@ -1,6 +1,6 @@
-useDynLib(highfrequency);
-import(zoo);
-import(xts);
+useDynLib(highfrequency); 
+import(zoo); 
+import(xts); 
 
 export(
 minRV,
@@ -14,5 +14,8 @@ rRTSCov,
 rThresholdCov,
 rHYCov,
 rKernelCov,
-rKernel.available
-)#end exported functions
+rKernel.available,
+rAVGCov,
+makeReturns,
+refreshTime
+)#end exported function

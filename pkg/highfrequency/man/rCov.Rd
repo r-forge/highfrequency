@@ -35,6 +35,22 @@ return series over period \eqn{t}, with \eqn{M} observations during \eqn{t}.}
 an \eqn{N x N} matrix
 }
 
-\author{ Jonathan Cornelissen and Kris Boudt}
+\author{Jonathan Cornelissen and Kris Boudt}
 
-\keyword{ volatility}
+\examples{
+ # Realized Variance/Covariance for CTS aligned   
+ # at 5 minutes.
+ data(sample_tdata); 
+ data(sample_5minprices_jumps);
+ 
+ # Univariate: 
+ rv = rCov( rdata = sample_tdata$PRICE, align.by ="minutes", 
+                    align.period =5, makeReturns=TRUE); 
+ rv 
+ 
+ # Multivariate: 
+ rc = rCov( rdata = sample_5minprices_jumps['2010-01-04'], makeReturns=TRUE); 
+ rc
+}  
+
+\keyword{volatility}
