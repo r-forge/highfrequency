@@ -1602,6 +1602,9 @@ rZero = function( rdata, period = 1, align.by = "seconds", align.period = 1, cts
 # Accumulation:
 rAccumulation <- function(x, period=1, y=NULL, align.by="seconds",align.period=1, plotit=FALSE, cts=TRUE, makeReturns=FALSE)
 {
+  multixts = .multixts(x) || .multixts(y);
+  if( multixts ){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}     
+    
     align.period = .getAlignPeriod(align.period, align.by)   
     ans <- list(x=NULL, y=NULL)
     ans$y <- cumsum(rMarginal(x=x, y=y, period=period, align.period=align.period, cts=cts, makeReturns=makeReturns)$y)
@@ -1620,6 +1623,9 @@ rAccumulation <- function(x, period=1, y=NULL, align.by="seconds",align.period=1
 # Marginal distribution:
 rMarginal <- function(x, y=NULL, period, align.by="seconds", align.period=1, plotit=FALSE, cts=TRUE, makeReturns=FALSE)
 {
+  multixts = .multixts(x) || .multixts(y);
+  if( multixts ){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}     
+  
     align.period = .getAlignPeriod(align.period, align.by)   
     ans <- list(x = NULL, y = NULL)
     ans$x <- .alignIndices(1:length(x), align.period)
@@ -1642,6 +1648,9 @@ rMarginal <- function(x, y=NULL, period, align.by="seconds", align.period=1, plo
 # Cumulative sum of returns:
 rCumSum <- function(x, period = 1, align.by="seconds", align.period=1, plotit=FALSE, type='l', cts = TRUE, makeReturns=FALSE)
 {
+  multixts = .multixts(x);
+  if( multixts ){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}     
+
     align.period = .getAlignPeriod(align.period, align.by)   
     ans <- list(x = NULL, y = NULL)
     ans$x <- .alignIndices(1:length(.convertData(x, cts=cts, makeReturns=makeReturns)$data), align.period)
@@ -1662,6 +1671,9 @@ rCumSum <- function(x, period = 1, align.by="seconds", align.period=1, plotit=FA
 #Scatter returns:
 rScatterReturns <- function(x,y, period, align.by="seconds", align.period=1,numbers=FALSE,xlim= NULL, ylim=NULL, plotit=TRUE, pch=NULL, cts=TRUE, makeReturns=FALSE, scale.size=0, col.change=FALSE,...)
 {
+  multixts = .multixts(x) || .multixts(y);
+  if( multixts ){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input")}     
+  
     align.period = .getAlignPeriod(align.period, align.by) 
     y<- .alignReturns(.convertData(y, cts=cts, makeReturns=makeReturns)$data, align.period)
     x<- .alignReturns(.convertData(x, cts=cts, makeReturns=makeReturns)$data, align.period)
@@ -1726,74 +1738,6 @@ rScatterReturns <- function(x,y, period, align.by="seconds", align.period=1,numb
     mat
 }
 
-# Signature
-rSignature <- function(range, x, y=NULL, type="naive", cor = FALSE, rvargs = list(), align.by="seconds", align.period =1,xscale=1,  plotit=FALSE, cts=TRUE, makeReturns=FALSE, iteration.funct=NULL, iterations=NULL, lags=NULL)
-{
-    
-    if(!is.null(iteration.funct) || !is.null(iterations))
-    stop("iterations no longer work, please call this function mutliple times and average the result.")
-    
-    if(!is.null(lags)){
-        warning("lags is deprecated, use the appropriate rv.* or rc.* paramter name in rvargs")
-        rvargs$kernel.param = lags
-    }   
-    # Hack 
-    if(length(which(names(rvargs)=="align.period")) > 0){
-        warning("align.period in rvargs is deprecated, use as parameter")
-        align.period=rvargs$align.period
-        rvargs[which(names(rvargs)=="align.period") ] = NULL
-        if(length(rvargs)==0)
-        rvargs = list(bs=1)
-        
-    }
-    
-    if(type=="kernel"){
-        kernfun <- function(r, x, y, type, cor, rvargs){
-            rvargs$kernel.param = r
-            .realized.variance(x=x, y=y, type=type, cor = cor, rvargs = rvargs)
-        }
-        ans <- list(x=range*xscale, 
-        y=sapply(range, kernfun,x=x,y=y,type=type, cor=cor, rvargs=rvargs),
-        xgrid=range,
-        type = type,
-        cor = cor,
-        cov = is.null(y),
-        cts= cts)
-    }
-    else{
-        ans <- list(x=range*xscale, 
-        y=sapply(range, function(r, x, y, type, period, align.by, align.period, cor, rvargs){.realized.variance(x=x, y=y, type=type, period = r, cor = cor, rvargs = rvargs, align.by=align.by, align.period=align.period)},x=x,y=y,type=type, cor=cor, rvargs=rvargs, align.period=align.period, align.by=align.by),
-        xgrid=range,
-        type = type,
-        cor = cor,
-        cov = is.null(y),
-        cts= cts)
-    }
-    
-    
-    if(plotit)
-    {
-        .rSignature.plot(ans)
-    }
-    ans
-}
-
-.rSignature.plot <- function(obj)
-{
-    if(obj$cov && obj$cor)
-    {
-        ylab = "Realized Correlation"
-    }
-    else{
-        if(obj$cov)
-        ylab = "Realized Covariance"
-        else
-        ylab = "Realized Variance"
-    }
-    xlab = "Sampling Frequency"
-    main = paste(ylab, ":", obj$type, sep="")
-    plot(obj$x, obj$y, xlab=xlab, ylab=ylab, main=main)          
-}
 
 ######################################################################
 #  START implementation of paper:
@@ -1828,7 +1772,7 @@ ABDJumptest = function(RV, BPV, TQ){ # Comput jump detection stat mentioned in r
     return(zstat);
 }
 
-harModel = function(data, periods = c(1,5,22), periodsJ = c(1,5,22), leverage=NULL, RVest = c("RCov","RBPCov"), type="HARRV", 
+harModel = function(data, periods = c(1,5,22), periodsJ = c(1,5,22), leverage=NULL, RVest = c("rCov","rBPCov"), type="HARRV", 
 jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){  
     nperiods = length(periods); # Number of periods to aggregate over
     nest = length(RVest);       # Number of RV estimators
