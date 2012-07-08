@@ -10,8 +10,7 @@ This model is mainly used to forecast the next days'volatility based on the high
 
 
 \usage{ 
- harModel(data, periods = c(1, 5, 22), periodsJ = c(1,5,22), leverage=NULL, RVest = c("RCov", "RBPCov"), 
-    type = "HARRV", jumptest = "ABDJumptest", alpha = 0.05, h = 1, 
+ harModel(data, periods = c(1, 5, 22), periodsJ = c(1,5,22), leverage=NULL, RVest = c("rCov", "rBPCov"), type = "HARRV", jumptest = "ABDJumptest", alpha = 0.05, h = 1, 
     transform = NULL, ...) }
 
 \arguments{
@@ -22,7 +21,7 @@ This model is mainly used to forecast the next days'volatility based on the high
   See Corsi and Reno (2012) for more information. By default leverage=NULL and the model assumes the absence of a  leverage effect. Set leverage= c(1,5,22) to mimic the analysis in Corsi and Reno (2012).
   }   
   \item{RVest}{ a character vector with one or two elements. 
-   The first element refers to the name of the function to estimate the daily integrated variance (non-jump-robust), while the second element refers to the name of the function to estimate the continuous component of daily volatility (jump-robust).  By default RVest = c("RCov","RBPCov"), i.e. using the Realized Volatility and Realized Bi-Power Variance.}
+   The first element refers to the name of the function to estimate the daily integrated variance (non-jump-robust), while the second element refers to the name of the function to estimate the continuous component of daily volatility (jump-robust).  By default RVest = c("rCov","rBPCov"), i.e. using the Realized Volatility and Realized Bi-Power Variance.}
    \item{type}{ a string referring to the type of HAR model you would like to estimate. By default type = "HARRV", the most basic model. Other valid options are type = "HARRVJ" or type = "HARRVCJ".}
    \item{jumptest}{ the function name of a function used to test whether the test statistic which determines whether the jump variability is significant that day. By default jumptest = "ABDJumptest", hence using the test statistic in Equation or Equation (18) of Andersen et al. (2007).}
    \item{alpha}{ a real indicating the confidence level used in testing for jumps. By default alpha = 0.05.}
@@ -62,7 +61,7 @@ Corsi, F. and Reno R. (2012). Discrete-time volatility forecasting with persiste
  data = sample_5minprices_jumps[,1];
  data = makeReturns(data); #Get the high-frequency return data
  
- x = harModel(data, periods = c(1,5,10), periodsJ=c(1,5,10), RVest = c("RCov","RBPCov"), 
+ x = harModel(data, periods = c(1,5,10), periodsJ=c(1,5,10), RVest = c("rCov","rBPCov"), 
               type="HARRVCJ",transform="sqrt"); # Estimate the HAR model of type HARRVCJ  
  class(x);
  x 
@@ -74,7 +73,7 @@ Corsi, F. and Reno R. (2012). Discrete-time volatility forecasting with persiste
  DJI_RV = DJI_RV[!is.na(DJI_RV)]; #Remove NA's
  DJI_RV = DJI_RV['2008'];
 
- x = harModel(data=DJI_RV , periods = c(1,5,22), RVest = c("RCov"), type="HARRV",h=1,transform=NULL);
+ x = harModel(data=DJI_RV , periods = c(1,5,22), RVest = c("rCov"), type="HARRV",h=1,transform=NULL);
  class(x); 
  x;
  summary(x);
