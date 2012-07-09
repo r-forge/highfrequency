@@ -26,9 +26,6 @@ of Washington}, 2007
 }
 \author{ Scott Payseur <scott.payseur@gmail.com>}
 
-\seealso{ \code{\link{rSignature}}, \code{\link{rv.zero}} }
-
-
 \examples{
 data(sbux.xts)
 data(lltc.xts)

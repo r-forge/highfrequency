@@ -30,7 +30,7 @@ S. W. Payseur.  A One Day Comparison of Realized Variance and Covariance Estimat
 of Washington}, 2007
 }
 \author{ Scott Payseur <scott.payseur@gmail.com}
-\seealso{ \code{\link{rAccumulation}}, \code{\link{rRealizedVariance}} }
+\seealso{ \code{\link{rAccumulation}} }
 
 \examples{
 data(sbux.xts)
