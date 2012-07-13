@@ -1973,7 +1973,7 @@ summary.harModel = function(object, correlation = FALSE, symbolic.cor = FALSE,..
     dd$call = modeldescription;
     rownames(dd$coefficients) = c("beta0",betas);
     return(dd)
-}
+} 
 
 plot.harModel = function(x, which = c(1L:3L, 5L), caption = list("Residuals vs Fitted", 
 "Normal Q-Q", "Scale-Location", "Cook's distance", "Residuals vs Leverage", 
@@ -2201,7 +2201,7 @@ makeXtsQuotes = function( qdata, format = format){
   return(qdata);
 }
 
-################ the real conversion starts here ;)
+################ The real conversion starts here ;)
 
 convert = function(from, to, datasource, datadestination, trades = TRUE, 
                    quotes = TRUE, ticker, dir = FALSE, extention = "txt", header = FALSE, 
@@ -2308,8 +2308,8 @@ TAQLoad = function(tickers,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,vari
   
   if((trades&quotes)){#in case both trades and quotes
     totalout=list();
-    totalout[[1]] = TAQload( ticker = tickers , from = from, to = to , trades=TRUE,quotes=FALSE,datasource = datasource,variables=variables);
-    totalout[[2]] = TAQload( ticker = tickers , from = from, to = to , trades=FALSE,quotes=TRUE,datasource = datasource,variables=variables);
+    totalout[[1]] = TAQLoad( tickers = tickers , from = from, to = to , trades=TRUE,quotes=FALSE,datasource = datasource,variables=variables);
+    totalout[[2]] = TAQLoad( tickers = tickers , from = from, to = to , trades=FALSE,quotes=TRUE,datasource = datasource,variables=variables);
   }
   return(totalout);
 }
@@ -2385,13 +2385,754 @@ uniTAQload = function(ticker,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,va
   if(trades==FALSE & quotes==TRUE){return(totaldataq)}
 }
 
+ ###### start SPOTVOL FUNCTIONS formerly in periodicityTAQ #########
+spotVol =  function(pdata, dailyvol = "bipower", periodicvol = "TML", on = "minutes", 
+                    k = 5, dummies = FALSE, P1 = 4, P2 = 2,  marketopen = "09:30:00", 
+                    marketclose = "16:00:00") 
+{
+  require(chron);
+  dates = unique(format(time(pdata), "%Y-%m-%d"))
+  cDays = length(dates)
+  rdata = mR = c()
+  if(on=="minutes"){
+    intraday = seq(from=times(marketopen), to=times(marketclose), by=times(paste("00:0",k,":00",sep=""))) 
+  }
+  if(tail(intraday,1)!=marketclose){intraday=c(intraday,marketclose)}
+  intraday = intraday[2:length(intraday)];
+  for (d in 1:cDays) {
+    pdatad = pdata[as.character(dates[d])]
+    pdatad = aggregatePrice(pdatad, on = on, k = k , marketopen = marketopen, marketclose = marketclose)
+    z = xts( rep(1,length(intraday)) , order.by = 
+      as.POSIXct( paste(dates[d],as.character(intraday),sep="") , format = "%Y-%m-%d %H:%M:%S"))
+    pdatad = merge.xts( z , pdatad )$pdatad
+    pdatad = na.locf(pdatad)
+    rdatad = makeReturns(pdatad)
+    rdatad = rdatad[time(rdatad) > min(time(rdatad))]
+    rdata = rbind(rdata, rdatad)
+    mR = rbind(mR, as.numeric(rdatad))
+  }
+  mR[is.na(mR)]=0
+  M = ncol(mR)
+  if (cDays == 1) {
+    mR = as.numeric(rdata)
+    estimdailyvol = switch(dailyvol, bipower = rBPCov(mR), 
+                           medrv = medRV(mR), rv = RV(mR))
+  }else {
+    estimdailyvol = switch(dailyvol, bipower = apply(mR, 
+                                                     1, "rBPCov"), medrv = apply(mR, 1, "medRV"), rv = apply(mR, 
+                                                                                                             1, "RV"))
+  }
+  if (cDays <= 50) {
+    print("Periodicity estimation requires at least 50 observations. Periodic component set to unity")
+    estimperiodicvol = rep(1, M)
+  }
+  else {
+    mstdR = mR/sqrt(estimdailyvol * (1/M))
+    selection = c(1:M)[ (nrow(mR)-apply(mR,2,'countzeroes')) >=20] 
+    # preferably no na is between
+    selection = c( min(selection) : max(selection) )
+    mstdR = mstdR[,selection]
+    estimperiodicvol_temp = diurnal(stddata = mstdR, method = periodicvol, 
+                                    dummies = dummies, P1 = P1, P2 = P2)[[1]]
+    estimperiodicvol = rep(1,M)
+    estimperiodicvol[selection] = estimperiodicvol_temp
+    mfilteredR = mR/matrix(rep(estimperiodicvol, cDays), 
+                           byrow = T, nrow = cDays)
+    estimdailyvol = switch(dailyvol, bipower = apply(mfilteredR, 
+                                                     1, "rBPCov"), medrv = apply(mfilteredR, 1, "MedRV"), 
+                           rv = apply(mfilteredR, 1, "RV"))
+  }
+  out = cbind(rdata, rep(sqrt(estimdailyvol * (1/M)), each = M) * 
+    rep(estimperiodicvol, cDays), rep(sqrt(estimdailyvol * 
+    (1/M)), each = M), rep(estimperiodicvol, cDays))
+  out = xts(out, order.by = time(rdata))
+  names(out) = c("returns", "vol", "dailyvol", "periodicvol")
+  return(out)
+}
 
 
+# internal non documented functions: 
+HRweight = function( d,k){
+  # Hard rejection weight function
+  w = 1*(d<=k); return(w)
+}
+
+shorthscale = function( data )
+{
+  sorteddata = sort(data);
+  n = length(data);
+  h = floor(n/2)+1;
+  M = matrix( rep(0,2*(n-h+1) ) , nrow= 2 );
+  for( i in 1:(n-h+1) ){
+    M[,i] = c( sorteddata[ i ], sorteddata[ i+h-1 ] )
+  }
+  return( 0.7413*min( M[2,]-M[1,] ) );
+}
+
+diurnal = 
+  function (stddata, method = "TML", dummies = F, P1 = 6, P2 = 4) 
+  {
+    cDays = dim(stddata)[1]
+    intraT = dim(stddata)[2]
+    meannozero = function(series) {
+      return(mean(series[series != 0]))
+    }
+    shorthscalenozero = function(series) {
+      return(shorthscale(series[series != 0]))
+    }
+    WSDnozero = function(weights, series) {
+      out = sum((weights * series^2)[series != 0])/sum(weights[series != 
+        0])
+      return(sqrt(1.081 * out))
+    }
+    if (method == "SD" | method == "OLS") {
+      seas = sqrt(apply(stddata^2, 2, "meannozero"))
+    }
+    if (method == "WSD" | method == "TML") {
+      seas = apply(stddata, 2, "shorthscalenozero")
+      shorthseas = seas/sqrt(mean(seas^2))
+      shorthseas[shorthseas == 0] = 1
+      weights = matrix(HRweight(as.vector(t(stddata^2)/rep(shorthseas, 
+                                                           cDays)^2), qchisq(0.99, df = 1)), ncol = dim(stddata)[2], 
+                       byrow = T)
+      for (c in 1:intraT) {
+        seas[c] = WSDnozero(weights[, c], stddata[, c])
+      }
+    }
+    seas = na.locf(seas,na.rm=F) #do not remove leading NA
+    seas = na.locf(seas,fromLast=T)
+    seas = seas/sqrt(mean(seas^2))
+    if (method == "OLS" | method == "TML") {
+      c = center()
+      vstddata = as.vector(stddata)
+      nobs = length(vstddata)
+      vi = rep(c(1:intraT), each = cDays)
+      if (method == "TML") {
+        if( length(vstddata)!= length(seas)*cDays ){ print(length(vstddata)); print(length(seas)); print(cDays)}
+        firststepresids = log(abs(vstddata)) - c - log(rep(seas, 
+                                                           each = cDays))
+      }
+      X = c()
+      if (!dummies) {
+        if (P1 > 0) {
+          for (j in 1:P1) {
+            X = cbind(X, cos(2 * pi * j * vi/intraT))
+          }
+        }
+        M1 = (intraT + 1)/2
+        M2 = (2 * intraT^2 + 3 * intraT + 1)/6
+        ADD = (vi/M1)
+        X = cbind(X, ADD)
+        ADD = (vi^2/M2)
+        X = cbind(X, ADD)
+        if (P2 > 0) {
+          ADD = c()
+          for (j in 1:P2) {
+            ADD = cbind(ADD, sin(2 * pi * j * vi/intraT))
+          }
+        }
+        X = cbind(X, ADD)
+        opening = vi - 0
+        stdopening = (vi - 0)/80
+        almond1_opening = (1 - (stdopening)^3)
+        almond2_opening = (1 - (stdopening)^2) * (opening)
+        almond3_opening = (1 - (stdopening)) * (opening^2)
+        X = cbind(X, almond1_opening, almond2_opening, almond3_opening)
+        closing = max(vi) - vi
+        stdclosing = (max(vi) - vi)/max(vi)
+        almond1_closing = (1 - (stdclosing)^3)
+        almond2_closing = (1 - (stdclosing)^2) * (closing)
+        almond3_closing = (1 - (stdclosing)) * (closing^2)
+        X = cbind(X, almond1_closing, almond2_closing, almond3_closing)
+      }
+      else {
+        for (d in 1:intraT) {
+          dummy = rep(0, intraT)
+          dummy[d] = 1
+          dummy = rep(dummy, each = cDays)
+          X = cbind(X, dummy)
+        }
+      }
+      selection = c(1:nobs)[vstddata != 0]
+      vstddata = vstddata[selection]
+      X = X[selection, ]
+      if (method == "TML") {
+        firststepresids = firststepresids[selection]
+      }
+      vy = matrix(log(abs(vstddata)), ncol = 1) - c
+      if (method == "OLS") {
+        Z = try(solve(t(X) %*% X), silent = T)
+        if (inherits(Z, "try-error")) {
+          print("X'X is not invertible. Switch to TML")
+        }
+        else {
+          theta = solve(t(X) %*% X) %*% t(X) %*% vy
+          rm(X)
+          rm(vy)
+        }
+      }
+      if (method == "TML") {
+        inittheta = rep(0, dim(X)[2])
+        l = -2.272
+        u = 1.6675
+        nonoutliers = c(1:length(vy))[(firststepresids > 
+          l) & (firststepresids < u)]
+        truncvy = vy[nonoutliers]
+        rm(vy)
+        truncX = X[nonoutliers, ]
+        rm(X)
+        negtruncLLH = function(theta) {
+          res = truncvy - truncX %*% matrix(theta, ncol = 1)
+          return(mean(-res - c + exp(2 * (res + c))/2))
+        }
+        grnegtruncLLH = function(theta) {
+          res = truncvy - truncX %*% matrix(theta, ncol = 1)
+          dres = -truncX
+          return(apply(-dres + as.vector(exp(2 * (res + 
+            c))) * dres, 2, "mean"))
+        }
+        est = optim(par = inittheta, fn = negtruncLLH, gr = grnegtruncLLH, 
+                    method = "BFGS")
+        theta = est$par
+        rm(truncX)
+        rm(truncvy)
+      }
+      plot(seas, main = "Non-parametric (dashed line) and parametric (full line) periodicity", 
+           xlab = "intraday period", type = "l", lty = 3)
+      seas = highfrequency:::diurnalfit(theta = theta, P1 = P1, P2 = P2, intraT = intraT, 
+                               dummies = dummies)
+      lines(seas, lty = 1)
+      return(list(seas, theta))
+    }
+    else {
+      return(list(seas))
+    }
+  }
+
+diurnalfit = function( theta , P1 , P2 , intraT , dummies=F )
+{
+  vi = c(1:intraT) ;  
+  M1 = (intraT+1)/2 ; M2 = (2*intraT^2 + 3*intraT + 1)/6;
+  
+  # Regressors that do not depend on Day of Week:
+  X = c()
+  if(!dummies){
+    if ( P1 > 0 ){ for( j in 1:P1 ){ X = cbind( X , cos(2*pi*j*vi/intraT) )   }  } 
+    
+    ADD = (vi/M1 ) ; X = cbind(X,ADD);
+    ADD = (vi^2/M2); X = cbind(X,ADD);
+    if ( P2 > 0 ){ ADD= c(); for( j in 1:P2 ){  ADD = cbind( ADD , sin(2*pi*j*vi/intraT)  ) }}; X = cbind( X , ADD ) ; 
+    
+    #openingeffect
+    opening = vi-0 ; stdopening = (vi-0)/80 ;
+    almond1_opening   = ( 1 - (stdopening)^3 );
+    almond2_opening   = ( 1 - (stdopening)^2 )*( opening);
+    almond3_opening   = ( 1 - (stdopening)   )*( opening^2);   
+    X = cbind(  X, almond1_opening , almond2_opening , almond3_opening   )  ;
+    
+    #closing effect
+    closing = max(vi)-vi ; stdclosing = (max(vi)-vi)/max(vi) ;
+    almond1_closing   = ( 1 - (stdclosing)^3 );
+    almond2_closing   = ( 1 - (stdclosing)^2 )*( closing);
+    almond3_closing   = ( 1 - (stdclosing)   )*( closing^2);   
+    X = cbind(  X, almond1_closing , almond2_closing , almond3_closing   )  ;
+    
+  }else{
+    for( d in 1:intraT){
+      dummy = rep(0,intraT); dummy[d]=1; 
+      X = cbind(X,dummy); 
+    }
+  }
+  # Compute fit
+  seas = exp( X%*%matrix(theta,ncol=1) );
+  seas = seas/sqrt(mean( seas^2) )    
+  return( seas )          
+}
+
+LeeMyklandCV = function( beta = 0.999 , M = 78 )
+{
+  # Critical value for Lee-Mykland jump test statistic
+  # Based on distribution of Maximum of M absolute normal random variables
+  a = function(n){ a1=sqrt(2*log(n)) ; a2= (log(pi)+log(log(n))  )/( 2*sqrt(2*log(n))   ); return(a1-a2)             };
+  b = function(n){ return( 1/sqrt(2*log(n) )  ) ; return(b)} ;
+  return( -log(-log(beta))*b(M) + a(M)     )
+}
+
+center = function()
+{
+  g=function(y){ return( sqrt(2/pi)*exp(y-exp(2*y)/2)  )}
+  f=function(y){ return( y*g(y)    )  }
+  return( integrate(f,-Inf,Inf)$value )
+}
+
+ ###### end SPOTVOL FUNCTIONS formerly in periodicityTAQ #########
+
+ ###### Liquidity functions formerly in in RTAQ  ######
+.check_data = function(data){ 
+  # FUNCTION sets column names according to RTAQ format using quantmod conventions, such that all the other functions find the correct information.
+  require('quantmod');
+  # First step: assign the xts attributes:
+  data = set.AllColumns(data);
+  
+  # Change column names to previous RTAQ format! 
+  # Adjust price col naming:  
+  try( (colnames(data)[xtsAttributes(data)[['Price']]] = 'PRICE') );
+  # Adjust Bid col naming:    
+  try( (colnames(data)[xtsAttributes(data)[['Bid']]] = 'BID') );
+  # Adjust Ask col naming:    
+  try( (colnames(data)[xtsAttributes(data)[['Ask']]] = 'OFR') );
+  
+  # Adjust Ask size col naming:
+  try( (colnames(data)[xtsAttributes(data)[['BidSize']]] = 'BIDSIZ') );
+  
+  # Adjust Bid size col naming:    
+  try( (colnames(data)[xtsAttributes(data)[['AskSize']]] = 'OFRSIZ') );
+  
+  # Adjust correction column, if necessary:
+  if(any(colnames(data) == "CR")){
+    colnames(data)[colnames(data) == "CR"] = "CORR"
+  }
+  
+  return(data)
+} 
+
+qdatacheck = function(qdata){
+  if(!is.xts(qdata)){stop("The argument qdata should be an xts object")}
+  if(!any(colnames(qdata)=="BID")){stop("The argument qdata should have a column containing the BID. Could not find that column")}
+  if(!any(colnames(qdata)=="OFR")){stop("The argument qdata should have a column containing the ASK / OFR. Could not find that column")}
+}
+
+tdatacheck = function(tdata){ 
+  if(!is.xts(tdata)){stop("The argument tdata should be an xts object")}
+  if(!any(colnames(tdata)=="PRICE")){stop("The argument tdata should have a PRICE column")}
+}
+
+tqdatacheck = function(tqdata){ 
+  if(!is.xts(tqdata)){stop("The argument tqdata should be an xts object")}
+  if(!any(colnames(tqdata)=="PRICE")){ stop("The argument tqdata should have a column containing the PRICE data. Could not find that column.")}
+  if(!any(colnames(tqdata)=="BID")){    stop("The argument tqdata should have a column containing the BID. Could not find that column")}
+  if(!any(colnames(tqdata)=="OFR")){    stop("The argument tqdata should have a column containing the ASK / OFR. Could not find that column")}
+} 
+
+rdatacheck = function(rdata,multi=FALSE){
+  #if(!is.xts(rdata)){stop("The argument rdata should be an xts object")} CAN PERFECTLY BE A MATRIX FOR ALL FUNCTIONS SO FAR...
+  if((dim(rdata)[2] < 2) & (multi)){stop("Your rdata object should have at least 2 columns")}
+}
+
+matchTradesQuotes = function(tdata,qdata,adjustment=2){ ##FAST VERSION
+  tdata = .check_data(tdata);
+  qdata = .check_data(qdata);
+  qdatacheck(qdata);
+  tdatacheck(tdata);
+  
+  tt = dim(tdata)[2];  
+  index(qdata) = index(qdata) + adjustment;
+  
+  #merge:
+  merged = merge(tdata,qdata);
+  
+  ##fill NA's:
+  merged[,((tt+1):dim(merged)[2])] = na.locf(as.zoo(merged[,((tt+1):dim(merged)[2])]), na.rm=FALSE);
+  
+  #Select trades:
+  index(tdata)=  as.POSIXct(index(tdata));
+  index(merged)= as.POSIXct(index(merged));  
+  merged = merged[index(tdata)];
+  
+  #return useful parts:
+  #remove duplicated SYMBOL & EX (new)
+  eff =  colnames(merged);
+  realnames = c("SYMBOL","EX","PRICE","SIZE","COND","CORR","G127","BID","BIDSIZ","OFR","OFRSIZ","MODE");
+  condition = (1:length(eff))[eff%in%realnames];
+  merged = merged[,condition];
+  
+  ##a bit rough but otherwise opening price disappears...
+  merged = as.xts(na.locf(as.zoo(merged),fromLast=TRUE));
+  
+  index(merged) = as.POSIXct(index(merged));
+  return(merged)
+}
+
+getTradeDirection = function(tqdata,...){
+  if(hasArg(data)){ tqdata = data; rm(data) }
+  tqdata = .check_data(tqdata);
+  tqdatacheck(tqdata); 
+  
+  ##Function returns a vector with the inferred trade direction:
+  ##NOTE: the value of the first (and second) observation should be ignored if price=midpoint for the first (second) observation.
+  bid = as.numeric(tqdata$BID);
+  offer = as.numeric(tqdata$OFR);
+  midpoints = (bid + offer)/2;
+  price = as.numeric(tqdata$PRICE);
+  
+  buy1 = price > midpoints; #definitely a buy
+  equal = price == midpoints;
+  dif1 = c(TRUE,0 < price[2:length(price)]-price[1:(length(price)-1)]);#for trades=midpoints: if uptick=>buy
+  equal1 = c(TRUE,0 == price[2:length(price)]-price[1:(length(price)-1)]);#for trades=midpoints: zero-uptick=>buy
+  dif2 = c(TRUE,TRUE,0 < price[3:length(price)]-price[1:(length(price)-2)]);
+  
+  buy = buy1 | (dif1 & equal) | (equal1 & dif2 & equal);
+  
+  buy[buy==TRUE]=1;
+  buy[buy==FALSE]=-1;
+  
+  return(buy);
+}
+
+es = function(data){
+  data = .check_data(data);
+  #returns the effective spread as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  price = as.numeric(data$PRICE);
+  d = gettradedir(data);
+  
+  es=xts(2*d*(price-midpoints),order.by=index(data));
+  return(es);
+}
+
+rs = function(data,tdata,qdata){
+  data  =  .check_data(data);
+  qdata =  .check_data(qdata);
+  tdata =  .check_data(tdata);
+  
+  ###Function returns the realized spread as an xts object
+  #Please note that the returned object can contain less observations that the original "data"
+  #because of the need to find quotes that match the trades 5 min ahead
+  
+  #arguments
+  #data=> xts object containing matched trades and quotes
+  #tdata and qdata, the xts object containing the trades and quotes respectively
+  
+  ##First part solves the problem that unequal number of obs (in data and data2) is possible when computing the RS
+  data2 = matchtq(tdata,qdata,adjustment =300);
+  if(dim(data2)[1]>dim(data)[1]){
+    condition = as.vector(as.character(index(data2)))%in%as.vector(as.character(index(data)));
+    data2 = subset(data2,condition,select=1:(dim(data)[2]));
+    data = subset(data,as.vector(as.character(index(data)))%in%as.vector(as.character(index(data2))),select=1:(dim(data2)[2]));
+  }
+  
+  if(dim(data2)[1]<dim(data)[1]){
+    condition = as.vector(as.character(index(data)))%in%as.vector(as.character(index(data2)));
+    data = subset(data,condition,select=1:(dim(data2)[2]));
+    data2 = subset(data2,as.vector(as.character(index(data2)))%in%as.vector(as.character(index(data))),select=1:(dim(data)[2]));
+  }
+  
+  bid = as.numeric(data2$BID);
+  offer = as.numeric(data2$OFR);
+  midpoints = (bid + offer)/2;
+  price = as.numeric(data$PRICE);
+  d = gettradedir(data);
+  rs = 2*d*(price-midpoints);
+  
+  rs_xts = xts(rs,order.by=index(data));
+  return(rs_xts);
+}
+
+value_trade = function(data){
+  data = .check_data(data);
+  #returns the trade value as xts object
+  price = as.numeric(data$PRICE);
+  size = as.numeric(data$SIZE);
+  
+  value = xts(price*size,order.by=index(data));
+  return(value);
+}
+
+signed_value_trade = function(data){
+  data = .check_data(data);
+  #returns the signed trade value as xts object
+  price = as.numeric(data$PRICE);
+  size = as.numeric(data$SIZE);
+  d = gettradedir(data);
+  
+  value = xts(d*price*size,order.by=index(data));
+  return(value);
+}
 
 
+signed_trade_size = function(data){
+  data = .check_data(data);
+  #returns the signed size of the trade as xts object
+  size = as.numeric(data$SIZE);
+  d = gettradedir(data);
+  
+  value = xts(d*size,order.by=index(data));
+  return(value);
+}
+
+di_diff = function(data){
+  data = .check_data(data);
+  #returns the depth imbalance (as a difference) as xts object
+  bidsize = as.numeric(data$BIDSIZ);
+  offersize = as.numeric(data$OFRSIZ);
+  
+  d = gettradedir(data);
+  di = (d*(offersize-bidsize))/(offersize+bidsize);
+  di_xts = xts(di,order.by=index(data));
+  return(di_xts);
+}
+
+di_div = function(data){
+  data = .check_data(data);
+  #returns the depth imbalance (as a ratio) as xts object
+  bidsize = as.numeric(data$BIDSIZ);
+  offersize = as.numeric(data$OFRSIZ);
+  d = gettradedir(data);
+  
+  di = (offersize/bidsize)^d;
+  di_xts = xts(di,order.by=index(data));
+  return(di_xts);
+}
+
+pes = function(data){
+  data = .check_data(data);
+  #returns the Proportional Effective Spread as xts object
+  es = es(data);
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  
+  pes = es/midpoints
+  pes_xts = xts(pes,order.by=index(data));
+  return(pes_xts);
+}
+
+prs = function(data,tdata,qdata){
+  data  = .check_data(data);
+  tdata = .check_data(tdata);
+  qdata = .check_data(qdata);
+  
+  #returns the Proportional Realized Spread as xts object
+  rs = rs(data,tdata,qdata);
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  prs = rs/midpoints
+  prs_xts = xts(prs,order.by=index(data));
+  return(prs_xts);
+}
+
+price_impact = function(data,tdata,qdata){
+  data = .check_data(data);
+  #returns the Price impact as xts object
+  rs = rs(data,tdata,qdata);
+  es = es(data);
+  
+  pi = (es-rs)/2;
+  pi_xts = xts(pi,order.by=index(data));
+  return(pi_xts);
+}
+
+prop_price_impact = function(data,tdata,qdata){
+  data = .check_data(data);
+  #returns the Proportional Price impact as xts object
+  rs = rs(data,tdata,qdata);
+  es = es(data);
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  
+  prop_pi = ((es-rs)/2)/midpoints;
+  prop_pi_xts = xts(prop_pi,order.by=index(data));
+  return(prop_pi_xts);
+}
+
+tspread = function(data){
+  data = .check_data(data);
+  #returns the half traded spread as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  price = as.numeric(data$PRICE);
+  d = gettradedir(data);
+  
+  ts = xts(d*(price-midpoints),order.by=index(data));
+  return(ts);
+}
+
+pts = function(data){
+  data = .check_data(data);
+  #returns the proportional half traded spread as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  price = as.numeric(data$PRICE);
+  d = gettradedir(data);
+  pts = (d*(price-midpoints))/midpoints;
+  
+  pts_xts = xts(pts,order.by=index(data));
+  return(pts_xts);
+}
+
+p_return_sqr = function(data){
+  data = .check_data(data);
+  #returns the squared log return on Trade prices as xts object
+  price = as.numeric(data$PRICE);
+  return = c(0,log(price[2:length(price)])-log(price[1:length(price)-1]));
+  sqr_return = return^2;
+  
+  sqr_return_xts = xts(sqr_return,order.by=index(data));
+  return(sqr_return_xts);
+}
+
+qs = function(data){
+  data = .check_data(data);
+  #returns the quoted spread as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  qs = offer-bid;
+  
+  qs_xts = xts(qs,order.by=index(data));
+  return(qs_xts);
+}
+
+pqs = function(data){
+  data = .check_data(data);
+  #returns the proportional quoted spread as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  qs = offer-bid;
+  pqs = qs/midpoints;
+  
+  pqs_xts = xts(pqs,order.by=index(data));
+  return(pqs_xts);
+}
+
+logqs = function(data){
+  data = .check_data(data);
+  #returns the logarithm of the quoted spread as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  logqs = log(offer/bid);
+  
+  logqs_xts = xts(logqs,order.by=index(data));
+  return(logqs_xts);
+}
+
+logsize = function(data){
+  data = .check_data(data);
+  #returns the log quoted size as xts object
+  bidsize = as.numeric(data$BIDSIZ);
+  offersize = as.numeric(data$OFRSIZ);
+  logsize = log(bidsize)+log(offersize);
+  
+  logsize_xts = xts(logsize,order.by=index(data));
+  return(logsize_xts);
+}
+
+qslope = function(data){
+  data = .check_data(data);
+  #returns the quoted slope as xts object
+  logsize = logsize(data);
+  qs = qs(data);
+  
+  qslope = qs/logsize;
+  
+  qslope_xts = xts(qslope,order.by=index(data));
+  return(qslope_xts);
+}
+
+logqslope = function(data){
+  data = .check_data(data);
+  #returns the log quoted slope as xts object
+  logqs = logqs(data);
+  logsize = logsize(data);
+  
+  logqslope = logqs/logsize;
+  
+  logqslope_xts = xts(logqslope,order.by=index(data));
+  return(logqslope_xts);
+}
+
+mq_return_sqr = function(data){
+  data = .check_data(data);
+  #returns midquote squared returns slope as xts object
+  mq_return = mq_return(data);
+  
+  mq_return_sqr = mq_return^2;
+  
+  mq_return_sqr_xts = xts(mq_return_sqr,order.by=index(data));
+  return(mq_return_sqr_xts);
+}
+
+mq_return_abs = function(data){ 
+  data = .check_data(data);
+  #returns absolute midquote returns slope as xts object
+  mq_return = mq_return(data);
+  
+  mq_return_abs = abs(mq_return);
+  
+  mq_return_abs_xts = xts(mq_return_abs,order.by=index(data));
+  return(mq_return_abs_xts);
+}
+
+tqLiquidity <- function(tqdata=NULL,tdata=NULL,qdata=NULL,type,...) {
+  if(hasArg(data)){ tqdata = data }
+  if(!is.null(tqdata)){tqdatacheck(tqdata)}
+  if(!is.null(qdata)){qdatacheck(qdata)}
+  if(!is.null(tdata)){tdatacheck(tdata)}
+  
+  result=switch(type,
+                es = es(tqdata),
+                rs = rs(tqdata,tdata,qdata),
+                value_trade = value_trade(tqdata),
+                signed_value_trade = signed_value_trade(tqdata),
+                di_diff = di_diff(tqdata),
+                pes = pes(tqdata),
+                prs = prs(tqdata,tdata,qdata),
+                price_impact = price_impact(tqdata,tdata,qdata),
+                prop_price_impact = prop_price_impact(tqdata,tdata,qdata),
+                tspread = tspread(tqdata),
+                pts = pts(tqdata),
+                p_return_sqr = p_return_sqr(tqdata),
+                p_return_abs = p_return_abs(tqdata),
+                qs = qs(tqdata),
+                pqs = pqs(tqdata),
+                logqs = logqs(tqdata),
+                logsize = logsize(tqdata),
+                qslope = qslope(tqdata),
+                logqslope = logqslope(tqdata),
+                mq_return_sqr = mq_return_sqr(tqdata),
+                mq_return_abs = mq_return_abs(tqdata),
+                signed_trade_size = signed_trade_size(tqdata)
+  )
+  
+  colnames(result)=type;
+  return(result);
+}
+
+##help_function:
+mq_return = function(data){
+  data = .check_data(data);
+  #function returns the midquote logreturns as xts object
+  bid = as.numeric(data$BID);
+  offer = as.numeric(data$OFR);
+  midpoints = (bid + offer)/2;
+  mq_return = c(0,log(midpoints[2:length(midpoints)])-log(midpoints[1:length(midpoints)-1]));
+  
+  mq_return_xts = xts(mq_return,order.by=index(data));
+  return(mq_return_xts);
+}
+
+p_return_abs <- function (data)
+{
+  price = as.numeric(data$PRICE)
+  return = c(0, log(price[2:length(price)]) - log(price[1:length(price) -
+    1]))
+  abs_return = abs(return)
+  abs_return_xts = xts(abs_return, order.by = index(data))
+  return(abs_return_xts)
+}
 
 
+### Backwards compatibility for RTAQ functions ####
+ gettradedir = function(...){getTradeDirection(...)};                      
+ matchtq = function(...){matchTradesQuotes(...)};                          
 
+### 
 
 
 
