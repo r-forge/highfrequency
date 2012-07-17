@@ -405,7 +405,13 @@ void sametime(double *a, int *na, int *millis, double *tts)
 
 void tocts(double *a, int *na, int *millis, int *millisstart, int *millisend, double *cts)
 {
-    int n = (*millisend - *millisstart)/1000 +1,i, j=0;
+//	array cts is passed from R having length (millisend-millisstart)/1000
+//	loop tries to write (*millisend - *millisstart)/1000 +1 values into the
+//	array -> C runs out of memory and throws segfault error
+//    int n = (*millisend - *millisstart)/1000 +1,i, j=0;
+//	Still need to carefully check if the correction below works correctly, maybe
+//  you rather need to increase the size of the array on the R side
+    int n = (*millisend - *millisstart)/1000,i, j=0;
    for(i = 0; i < n; i ++)
     {
     	if((j < *na) && (millis[j] == ((i*1000) + *millisstart)))
