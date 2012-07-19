@@ -50,7 +50,8 @@ aggregatePrice,
 aggregateQuotes,
 aggregateTrades,
 aggregatets,
-previoustick
+previoustick,
+heavyModel
 )#end exported function
 
 S3method(print, harModel);

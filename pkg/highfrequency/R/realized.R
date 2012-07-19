@@ -3928,3 +3928,177 @@ aggregateQuotes = function(qdata,on="minutes",k=5,marketopen="09:30:00",marketcl
   ts = xts(all,index(BIDOFR));
   return(ts);
 }
+
+###########
+# Likelihood for HEAVY volatility model of Shephard and Sheppard 
+# Code is R-translation by Jonathan Cornelissen of matlab code of http://www.kevinsheppard.com/wiki/MFE_Toolbox
+# by: kevin.sheppard@economics.ox.ac.uk
+
+# USAGE:
+#  [LL,LLS,H] = heavy_likelihood(PARAMETERS,DATA,P,Q,BACKCAST,LB,UB)
+
+# INPUTS: 
+#   PARAMETERS  - A vector with K+sum(sum(P))+sum(sum(Q)) elements. 
+#    DATA       - A T by K vector of non-negative data.  Returns should be squared before using
+#    P          - A K by K matrix containing the lag length of model innovations.  Position (i,j)
+#                   indicates the number of lags of series j in the model for series i
+#    Q          - A K by K matrix containing the lag length of conditional variances.  Position (i,j)
+#                   indicates the number of lags of series j in the model for series i
+#    BACKCAST   - A 1 by K matrix of values to use fo rback casting
+#    LB         - A 1 by K matrix of volatility lower bounds to use in estimation
+#    UB         - A 1 by K matrix of volatility upper bounds to use in estimation
+# 
+# OUTPUTS:
+#    LL          - The log likelihood evaluated at the PARAMETERS
+#    LLS         - A T by 1 vector of log-likelihoods
+#    HT          - A T by K matrix of conditional variances
+
+# In contrast to Sheppards code, I make a list for parameters (easier interpretation)
+#NOTE # the parameter list has three items: O, A and B
+# O is a matrix (K by 1), A and B items are (K by K) matrices
+
+heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),ncol=2 ), 
+                      startingvalues = NULL, LB = NULL, UB = NULL, 
+                      backcast = NULL, compconst = FALSE){
+  K = dim(p)[2];
+  
+  # Set lower and upper-bound if not specified:
+  if( is.null(LB) ){ LB = rep(0,K)   }
+  if( is.null(UB) ){ UB = rep(Inf,K) }
+  
+  # Assign starting values if necessary:
+  if( is.null(startingvalues) ){  #Very very naive, to adjust later
+    startingvalues = rep(NA,K+sum(p)+sum(q));
+    startingvalues[1:K] = 0.1;
+    start = K+1; end = K+sum(p);
+    startingvalues[start:end] = 0.3;
+    start = end+1; end = start+sum(q)-1;
+    startingvalues[start:end] = 0.6;}
+  
+  # Rescale? (useful to avoid numerical problems: TODO LATER)
+  
+  # Set backcast if necessary: how to initialize the model?
+  if(is.null( backcast)){ 
+    # For now, just unconditionally
+    backcast = t( t( colMeans(data) ) );
+  } 
+  
+  # Estimate the parameters: 
+  # Set constraints: 
+  KKK  = length(startingvalues);    
+  ui   = diag(rep(1,KKK));          #All parameters should be larger than zero, add extra constraints with rbind...  
+  ci   = matrix(rep(0,dim(ui)[2]),ncol=1);  
+  
+  x = optim( par = startingvalues, fn = heavy_likelihood,
+             data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ); # ADJUST maxit ?!!
+  #  x = constrOptim( theta = startingvalues, f = heavy_likelihood, 
+  #                    grad=NULL,ui=ui, ci = ci, 
+  #                    data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ); 
+  
+  # Get the output: 
+  estparams = x$par; 
+  loglikelihood = x$value; 
+  
+  # Get the list with: total-log-lik, daily-log-lik, condvars
+  xx = heavy_likelihood(parameters = estparams, data=data, p=p, q=q, backcast=backcast, LB=LB, UB=UB, foroptim=FALSE, compconst = compconst);
+  xx$estparams =  estparams;
+  
+  return(xx)
+}
+
+transformparams = function( p, q, paramsvector ){
+  K = dim(p)[1]; 
+  pmax = max(p); qmax = max(q); # Max number of lags for innovations and cond vars
+  
+  O = matrix( paramsvector[1:K], ncol=1);
+  A = B = list();
+  start = (K+1); 
+  
+  for(i in 1:pmax){    # A will contain a list-item per innovation lag
+    end =          start + sum(p>=i) - 1; # How many non-zero params in this loop?
+    A[[i]] =       matrix(rep(0,K^2),ncol=2); 
+    A[[i]][p>=i] = paramsvector[start:end];
+    start  = end + 1;   
+  }#end loop over number of lags for innovations
+  
+  for(i in 1:qmax){   # B will contain a list-item per cond var lag
+    end   = start + sum(q>=i) -1; # How many non-zero params in this loop?
+    B[[i]] = matrix(rep(0,K^2),ncol=2); 
+    B[[i]][q >= i] = paramsvector[start:end];
+    start  = end+1;   
+  }#End loop over number of lags for cond variances
+  
+  return( list(O,A,B) ) 
+}  
+
+heavy_likelihood = function(parameters, data, p, q, backcast, LB, UB, foroptim=TRUE, compconst=FALSE ){ 
+  # Get the required variables
+  # p is Max number of lags for innovations 
+  # q is Max number of lags for conditional variances
+  K    = dim(data)[2];  #Number of series to model
+  T    = dim(data)[1];  #Number of time periods
+  lls  = rep(NA,T);     #Vector containing the likelihoods
+  h    = matrix(nrow=K,ncol=T); #Matrix to containing conditional variances
+  maxp = max(p); maxq=max(q);
+  
+  # Get the parameters:
+  x = transformparams( parameters, p=p, q=q );
+  if( compconst ){ O = x[[1]]; } 
+  A = x[[2]]; B = x[[3]]; 
+  # Compute constant in case it needn't to be optimized:
+  if( !compconst ){ # Don't compute the omega's but do (1-alpha-beta)*unconditional
+    totalA = totalB = matrix( rep(0,K) ,ncol=1,nrow=K);
+    for(j in 1:length(A) ){ totalA = totalA + t(t(rowSums(A[[j]]))); } # Sum over alphas for all models
+    for(j in 1:length(B) ){ totalB = totalB + t(t(rowSums(B[[j]]))); } # Sum over betas for all models
+    O = 1 - totalA - totalB; # The remaing weight after substracting A & B
+    # Calculate the unconditionals ### KRIS FEEDBACK PLEASE ###
+    uncond = t(t(colMeans(data)));
+    O = O*uncond;
+  } #End if close for not optimizing over omega  
+  
+  if( sum(O) < 0 ){ O[O<0] = 10^(-10)} #params here are shouldn't be smaller than zero
+  
+  likConst = K*log(2*pi); #constant for loglikelihood
+  
+  for(t in 1:T){ # Start loop over time periods
+    h[,t] = O;    #Add constant to h
+    
+    for(j in 1:maxp){# Loop over innovation lags
+      if( (t-j) > 0 ){ 
+        h[,t] = h[,t] + t( A[[j]] %*% t(t(data[(t-j),])) ); #Adding innovations to h        
+      }else{ 
+        h[,t] = h[,t] + t( A[[j]] %*% backcast ); #Adding innovations to h          
+      }
+    } #end loop over innovation lags
+    
+    for(j in 1:maxp){# Loop over cond variances lags
+      if( (t-j) > 0 ){ 
+        h[,t] = h[,t] + t( B[[j]] %*% t(t(h[,(t-j)])) ); #Adding cond vars to h 
+      }else{ 
+        h[,t] = h[,t] + t( B[[j]] %*% backcast ); #Adding cond vars to h          
+      }
+    }#End loop over innovation lags
+    
+    # Check whether h's are between LB and UB:      
+    for(j in 1:K){ #Loop over 
+      if( h[j,t] < LB[j] ){  h[j,t] = LB[j]/(1- (h[j,t] - LB[j]) );}
+      if( h[j,t] > UB[j] ){  h[j,t] = UB[j] + log( h[j,t] - UB[j]);}
+    }#end loop over series
+    
+    lls[t] = 0.5*( likConst + sum( log(h[,t]) ) + sum( data[t,] / h[,t] ) );            
+  } #End loop over days
+  ll = sum(lls);
+  
+  if(is.na(ll) || is.infinite(ll) ){  ll = 10^7 } 
+  
+  if(foroptim){   output = ll; return(output); }
+  if(!foroptim){
+    output = list( loglikelihood=ll, likelihoods=lls, condvar = h );
+    return(output)
+    # Output list:
+    # (i) total loglikelihood
+    # (ii) likelihood parts per time period
+    # (iii) matrix with conditional variances    
+  } #end output in case you want params
+}    
+
