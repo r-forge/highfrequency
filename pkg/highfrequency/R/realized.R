@@ -1792,14 +1792,14 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
     
     if( sum(data<0) == 0 ){ #The input is most likely already realized measures
         dimdata = dim(data)[2]; 
-        alldates = index(data);
-        RM1 = data[,1];
+        alldates = index(data); 
+        RM1 = data[,1]; 
         if( dimdata > 1 ){ RM2 = data[,2]; } 
         if( type != "HARRV" ){ warning("Please provide returns as input for the type of model you want to estimate. All your returns are positive which is quite unlikely honestly. Only for the HAR-RV model you can input realized measures.") }
-    }
+    } 
     
-    # Get the matrix for estimation of linear model
-    maxp      = max(periods,periodsJ); #max number of aggregation levels
+    # Get the matrix for estimation of linear model: 
+    maxp      = max(periods,periodsJ); # Max number of aggregation levels
     if(!is.null(leverage)){ maxp = max(maxp,leverage) }
     n         = length(RM1);  #Number of Days
     
@@ -1844,7 +1844,8 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
         return( model )
     } #End HAR-RV if cond
     
-    if( type == "HARRVJ" ){    
+    if( type == "HARRVJ" ){   
+        if(transform=="log"){ J = J + 1; }
         J = J[(maxp:(n-h)),]; 
         x = cbind(x1,J);              # bind jumps to RV data 
         if(!is.null(transform)){ y = Ftransform(y); x = Ftransform(x); }       
@@ -1860,10 +1861,11 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
         if( jumptest=="ABDJumptest" ){ 
             TQ = apply.daily(data, TQfun); 
             J = J[,1];
-            teststats    = ABDJumptest(RV=RM1,BPV=RM2,TQ=TQ ); 
+            teststats= ABDJumptest(RV=RM1,BPV=RM2,TQ=TQ ); 
         }else{ jtest = match.fun(jumptest); teststats = jtest(data,...) }  
         Jindicators  = teststats > qnorm(1-alpha); 
-        J[!Jindicators] = 0; 
+        J[!Jindicators] = 0;
+        
         # Get continuus components if necessary RV measures if necessary: 
         Cmatrix = matrix( nrow = dim(RVmatrix1)[1], ncol = 1 );
         Cmatrix[Jindicators,]    = RVmatrix2[Jindicators,1];      #Fill with robust one in case of jump
@@ -1873,7 +1875,9 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
         Jmatrix <- aggJ(J,periodsJ);
         # subset again:
         Cmatrix <- Cmatrix[(maxp:(n-h)),];
-        Jmatrix <- Jmatrix[(maxp:(n-h)),];            
+        Jmatrix <- Jmatrix[(maxp:(n-h)),];   
+        if(transform=="log"){ Jmatrix = Jmatrix + 1 }
+        
         x = cbind(Cmatrix,Jmatrix);               # bind jumps to RV data      
         if(!is.null(transform)){ y = Ftransform(y); x = Ftransform(x); }  
         x = cbind(x,rmin);
@@ -1882,7 +1886,6 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
         class(model) = c("harModel","lm");
         return(model)
     } 
-    
 } #End function harModel
 #################################################################
 estimhar = function(y, x){ #Potentially add stuff here
