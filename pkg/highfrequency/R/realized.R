@@ -4007,7 +4007,7 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   xx$estparams =  estparams;
   
   return(xx)
-}
+}  
 
 transformparams = function( p, q, paramsvector ){
   K = dim(p)[1]; 
