@@ -1845,7 +1845,7 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
     } #End HAR-RV if cond
     
     if( type == "HARRVJ" ){   
-        if(transform=="log"){ J = J + 1; }
+        if(!is.null(transform) && transform=="log"){ J = J + 1; }
         J = J[(maxp:(n-h)),]; 
         x = cbind(x1,J);              # bind jumps to RV data 
         if(!is.null(transform)){ y = Ftransform(y); x = Ftransform(x); }       
@@ -1876,7 +1876,7 @@ jumptest="ABDJumptest",alpha=0.05,h=1,transform=NULL, ...){
         # subset again:
         Cmatrix <- Cmatrix[(maxp:(n-h)),];
         Jmatrix <- Jmatrix[(maxp:(n-h)),];   
-        if(transform=="log"){ Jmatrix = Jmatrix + 1 }
+        if(!is.null(transform) && transform=="log"){ Jmatrix = Jmatrix + 1 }
         
         x = cbind(Cmatrix,Jmatrix);               # bind jumps to RV data      
         if(!is.null(transform)){ y = Ftransform(y); x = Ftransform(x); }  
