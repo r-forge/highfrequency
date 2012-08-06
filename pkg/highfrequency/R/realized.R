@@ -2008,12 +2008,12 @@ label.pos = c(4, 2), cex.caption = 1){
 ##################################################################################################
 ######################################### FORMER RTAQ FUNCTIONS ##################################
 ########## HELPFUNCTION ####
-readdata = function(path=NULL, extention="txt",header=FALSE,dims=0){
+readdata = function(path=NULL, extension="txt",header=FALSE,dims=0){
   #extention should either be "txt" or "csv"
-  if(!(extention=="txt"|extention=="csv")){print("Please select a supported extention")}
+  if(!(extension=="txt"|extension=="csv")){print("Please select a supported extension")}
   colnames = rep("x",dims);
   #load txt
-  if(extention == "txt"){
+  if(extension == "txt"){
     fullpath = paste(path,".txt",sep="");
     data = try(read.delim(fullpath,sep="",header=header,dec=",",col.names=colnames),silent=TRUE);
     
@@ -2024,7 +2024,7 @@ readdata = function(path=NULL, extention="txt",header=FALSE,dims=0){
     }
   }
   
-  if(extention == "csv"){
+  if(extension == "csv"){
     fullpath = paste(path,".csv",sep="");
     data = try(read.delim(fullpath,sep=",",header=header,dec=".",col.names=colnames),silent=TRUE);
     
@@ -2038,7 +2038,7 @@ readdata = function(path=NULL, extention="txt",header=FALSE,dims=0){
 }
 
 
-convert_trades = function (datasource, datadestination, ticker, extention = "txt", 
+convert_trades = function (datasource, datadestination, ticker, extension = "txt", 
                            header = FALSE, tradecolnames = NULL, format = "%Y%M%D %H:%M:%S") 
 {  
   missingt=matrix(ncol=2,nrow=0);
@@ -2058,7 +2058,7 @@ convert_trades = function (datasource, datadestination, ticker, extention = "txt
   for (i in 1:length(ticker)) {
     tfile_name = paste(datasource, "/", ticker[i], "_trades", 
                        sep = "")
-    tdata = try(highfrequency:::readdata(path = tfile_name, extention = extention, 
+    tdata = try(highfrequency:::readdata(path = tfile_name, extension = extension, 
                                 header = header, dims = 9), silent = TRUE)
     
     error = dim(tdata)[1] == 0
@@ -2098,7 +2098,7 @@ convert_trades = function (datasource, datadestination, ticker, extention = "txt
 }
 
 
-convert_quotes = function (datasource, datadestination, ticker, extention = "txt", 
+convert_quotes = function (datasource, datadestination, ticker, extension = "txt", 
                            header = FALSE, quotecolnames = NULL, format = "%Y%M%D %H:%M:%S") 
 {
   missingq=matrix(ncol=2,nrow=0);
@@ -2118,7 +2118,7 @@ convert_quotes = function (datasource, datadestination, ticker, extention = "txt
   for (i in 1:length(ticker)) {
     qfile_name = paste(datasource, "/", ticker[i], "_quotes", 
                        sep = "")
-    qdata = try(readdata(path = qfile_name, extention = extention, 
+    qdata = try(readdata(path = qfile_name, extension = extension, 
                          header = header, dims = 9), silent = TRUE)
     error = dim(qdata)[1] == 0
     if (error) {
@@ -2226,11 +2226,11 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
       datadestinationx = paste(datadestination, "/", dates[i], sep = "")
       
       if(trades == TRUE){ 
-        if(extention=="txt"|extention=="csv"){ convert_trades(datasourcex, datadestinationx, ticker, extention = extention, header = header, tradecolnames = tradecolnames, format = format) }
+        if(extension=="txt"|extension=="csv"){ convert_trades(datasourcex, datadestinationx, ticker, extension = extension, header = header, tradecolnames = tradecolnames, format = format) }
       }
       
       if (quotes == TRUE) { 
-        if(extention=="txt"|extention=="csv"){ convert_quotes(datasourcex, datadestinationx, ticker, extention = extention, header = header, quotecolnames = quotecolnames,format = format)}
+        if(extension=="txt"|extension=="csv"){ convert_quotes(datasourcex, datadestinationx, ticker, extension = extension, header = header, quotecolnames = quotecolnames,format = format)}
       } 
     }#End loop over days
   }#End "not oneday" if
@@ -2239,9 +2239,9 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
   if( onefile == TRUE ){
     # Load the data: ############################ This depends on the data provider
     if(trades == TRUE){ 
-      if( extention=="txt"){ dataname = paste(datasource,"/",ticker,"_trades",sep=""); highfrequency:::readdata(path = datasource, extention = "txt", header = FALSE, dims = 0); } 
-      if( extention=="csv"){ dataname = paste(datasource,"/",ticker,"_trades.csv",sep=""); data = read.csv(dataname);}
-      if( extention=="tickdatacom"){ 
+      if( extension=="txt"){ dataname = paste(datasource,"/",ticker,"_trades",sep=""); highfrequency:::readdata(path = datasource, extension = "txt", header = FALSE, dims = 0); } 
+      if( extension=="csv"){ dataname = paste(datasource,"/",ticker,"_trades.csv",sep=""); data = read.csv(dataname);}
+      if( extension=="tickdatacom"){ 
         dataname   = paste(datasource,"/",ticker,"_trades.asc",sep="");
         colnames   = c("DATE","TIME","PRICE","SIZE","EX","COND","CORR","SEQN","SOURCE","TSTOP","G127","EXCL","FPRICE");
         alldata    = read.delim(dataname, header=F, sep=",",dec=".",col.names=colnames); 
@@ -2253,9 +2253,9 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
       alldata = suppressWarnings(makeXtsTrades(tdata=data,format=format)); 
     }
     if (quotes == TRUE){ 
-      if( extention=="txt"){ dataname = paste(datasource,"/",ticker,"_quotes",sep=""); highfrequency:::readdata(path = datasource, extention = "txt", header = FALSE, dims = 0); } 
-      if( extention=="csv"){ dataname = paste(datasource,"/",ticker,"_quotes.csv",sep=""); data = read.csv(dataname);}
-      if( extention=="tickdatacom"){ 
+      if( extension=="txt"){ dataname = paste(datasource,"/",ticker,"_quotes",sep=""); highfrequency:::readdata(path = datasource, extension = "txt", header = FALSE, dims = 0); } 
+      if( extension=="csv"){ dataname = paste(datasource,"/",ticker,"_quotes.csv",sep=""); data = read.csv(dataname);}
+      if( extension=="tickdatacom"){ 
         dataname   = paste(datasource,"/",ticker,"_quotes.asc",sep=""); 
         colnames   = c("DATE","TIME","EX","BID","OFR","BIDSIZ","OFRSIZ","MODE","MMID","SEQN","EXB", "EXO","NBBOID","NBBOID","CORR","QSO"); 
         alldata    = read.delim(dataname, header=F, sep=",",dec=".",col.names=colnames); 
