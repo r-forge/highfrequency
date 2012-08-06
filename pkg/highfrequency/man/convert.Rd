@@ -11,7 +11,7 @@ Subsequently, the data can be loaded into the R console by \code{\link{TAQLoad}}
 
 \usage{
 convert(from,to,datasource,datadestination,trades=TRUE,quotes=TRUE,
-        ticker,dir=FALSE,extention="txt",header=FALSE,
+        ticker,dir=FALSE,extension="txt",header=FALSE,
         tradecolnames=NULL,quotecolnames=NULL,
         format="\%Y\%m\%d \%H:\%M:\%S",onefile=FALSE)        
 }
@@ -25,7 +25,7 @@ convert(from,to,datasource,datadestination,trades=TRUE,quotes=TRUE,
 \item{quotes}{ boolean, determines whether quotes are converted.}
 \item{ticker}{ vector with tickers to be converted.}
 \item{dir}{ boolean, if TRUE the datadestination folder and subfolders will be created automatically.}
-\item{extention}{character, indicating the data format of the original data. Can be either "txt" or "csv". In case your data comes from "www.tickdata.com", set extention="tickdatacom".}
+\item{extension}{character, indicating the data format of the original data. Can be either "txt" or "csv". In case your data comes from "www.tickdata.com", set extension="tickdatacom".}
 \item{header}{ boolean, indicating whether each data file contains a header.}
 \item{tradecolnames}{ vector containing column names of your trade data. By default, 
 the standard NYSE data format is taken, see pdf documentation for more details.}
@@ -34,7 +34,7 @@ the standard NYSE data format is taken, see pdf documentation for more details.}
 \item{format}{ character, indicates in what format TIME and DATE are recorded in the original data.
 By default, "\%Y\%M\%D \%H:\%M:\%S" is taken, which means the date is denoted by e.g. "20080130" and the time by e.g. "09:30:00".}
 \item{onefile}{  
-indicates the way the source data is stored. By default FALSE, which means the function expects that the source data is saved in a folder sturcture with a folder for each date (see vignette for more info). In case the data for multiple days is stored in one file, set onefile=TRUE. The naming convention for files is, e.g. for ticker="AAPL", "AAPL_trades.extention" and "AAPL_quotes.extension" for trades and quotes respectively.}
+indicates the way the source data is stored. By default FALSE, which means the function expects that the source data is saved in a folder sturcture with a folder for each date (see vignette for more info). In case the data for multiple days is stored in one file, set onefile=TRUE. The naming convention for files is, e.g. for ticker="AAPL", "AAPL_trades.extension" and "AAPL_quotes.extension" for trades and quotes respectively.}
 }
 
 \value{For each day an xts object is saved into the folder of that date, containing the converted data.
@@ -56,7 +56,7 @@ to = "2008-01-03";
 ### txt files from NYSE:
 
 convert(from,to,datasource,datadestination,trades=TRUE,
-          quotes=FALSE,ticker=c("AA","AAPL"),dir=FALSE,extention="txt",
+          quotes=FALSE,ticker=c("AA","AAPL"),dir=FALSE,extension="txt",
           header=FALSE,tradecolnames=NULL,quotecolnames=NULL,
           format="\%Y\%m\%d \%H:\%M:\%S");
 
@@ -72,7 +72,7 @@ convert(from,to,datasource,datadestination,trades=TRUE,
 #and then saved in RData format by:
 
  convert(from=from, to=to, datasource=datasource, datadestination=datadestination, trades = T, 
-                       quotes = T, ticker="IBM", dir = FALSE, extention = "csv", header = TRUE, 
+                       quotes = T, ticker="IBM", dir = FALSE, extension = "csv", header = TRUE, 
                        tradecolnames = NULL, quotecolnames = NULL, format = format, onefile = TRUE )  
 
 ####### ASC file from www.tickdata.com
@@ -81,7 +81,7 @@ convert(from,to,datasource,datadestination,trades=TRUE,
 #The files "GLP_quotes.asc" and "GLP_trades.asc" should be saved in datasource folder.
 
  convert(from=from, to=to, datasource=datasource, datadestination=datadestination, trades = T, 
-            quotes = T, ticker="GLP", dir = TRUE, extention = "tickdatacom", header = TRUE, 
+            quotes = T, ticker="GLP", dir = TRUE, extension = "tickdatacom", header = TRUE, 
             tradecolnames = NULL, quotecolnames = NULL, format = format, onefile = TRUE );  
 }
 }

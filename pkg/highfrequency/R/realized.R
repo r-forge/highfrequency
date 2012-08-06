@@ -2207,7 +2207,7 @@ makeXtsQuotes = function( qdata, format = format){
 ################ The real conversion starts here ;)
 
 convert = function(from, to, datasource, datadestination, trades = TRUE, 
-                   quotes = TRUE, ticker, dir = FALSE, extention = "txt", header = FALSE, 
+                   quotes = TRUE, ticker, dir = FALSE, extension = "txt", header = FALSE, 
                    tradecolnames = NULL, quotecolnames = NULL, format = "%Y%m%d %H:%M:%S", onefile=FALSE){  
   require("timeDate")
   
