@@ -1,8 +1,7 @@
 # This file contains all realized measures previously implemented in RTAQ and realized
-
-########################################################
+######################################################## 
 ## Help functions: (not exported)
-########################################################
+######################################################## 
 .multixts <- function( x, y=NULL)
 { 
     if(is.null(y)){
@@ -2388,7 +2387,9 @@ uniTAQload = function(ticker,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,va
   if(trades==FALSE & quotes==TRUE){return(totaldataq)}
 }
 
- ###### start SPOTVOL FUNCTIONS formerly in periodicityTAQ #########
+###### start SPOTVOL FUNCTIONS formerly in periodicityTAQ #########
+# Documented function:
+
 spotVol =  function(pdata, dailyvol = "bipower", periodicvol = "TML", on = "minutes", 
                     k = 5, dummies = FALSE, P1 = 4, P2 = 2,  marketopen = "09:30:00", 
                     marketclose = "16:00:00") 
@@ -2405,8 +2406,7 @@ spotVol =  function(pdata, dailyvol = "bipower", periodicvol = "TML", on = "minu
   for (d in 1:cDays) {
     pdatad = pdata[as.character(dates[d])]
     pdatad = aggregatePrice(pdatad, on = on, k = k , marketopen = marketopen, marketclose = marketclose)
-    z = xts( rep(1,length(intraday)) , order.by = 
-      as.POSIXct( paste(dates[d],as.character(intraday),sep="") , format = "%Y-%m-%d %H:%M:%S"))
+    z = xts( rep(1,length(intraday)) , order.by = timeDate( paste(dates[d],as.character(intraday),sep="") , format = "%Y-%m-%d %H:%M:%S"))
     pdatad = merge.xts( z , pdatad )$pdatad
     pdatad = na.locf(pdatad)
     rdatad = makeReturns(pdatad)
@@ -2442,7 +2442,7 @@ spotVol =  function(pdata, dailyvol = "bipower", periodicvol = "TML", on = "minu
     mfilteredR = mR/matrix(rep(estimperiodicvol, cDays), 
                            byrow = T, nrow = cDays)
     estimdailyvol = switch(dailyvol, bipower = apply(mfilteredR, 
-                                                     1, "rBPCov"), medrv = apply(mfilteredR, 1, "MedRV"), 
+                                                     1, "rBPCov"), medrv = apply(mfilteredR, 1, "medRV"), 
                            rv = apply(mfilteredR, 1, "RV"))
   }
   out = cbind(rdata, rep(sqrt(estimdailyvol * (1/M)), each = M) * 
@@ -2600,8 +2600,10 @@ diurnal =
         rm(truncX)
         rm(truncvy)
       }
-      plot(seas, main = "Non-parametric (dashed line) and parametric (full line) periodicity", 
+      plot(seas, main = "Non-parametric and parametric periodicity estimates", 
            xlab = "intraday period", type = "l", lty = 3)
+      legend("topright", c("Parametric", "Non-parametric"), cex = 1.1,
+             lty = c(1,3), lwd = 1, bty = "n")
       seas = highfrequency:::diurnalfit(theta = theta, P1 = P1, P2 = P2, intraT = intraT, 
                                dummies = dummies)
       lines(seas, lty = 1)

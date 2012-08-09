@@ -73,8 +73,8 @@ Journal of Empirical Finance 4, 317-340.
 data("sample_real5minprices");
 
 # Compute and plot intraday periodicity:
-\dontrun{ #out = spotVol(sample_real5minprices,P1=6,P2=4,periodicvol="TML",k=5, dummies=FALSE); }
-\dontrun{ #head(out); }
+out = spotVol(sample_real5minprices,P1=6,P2=4,periodicvol="TML",k=5, dummies=FALSE);
+head(out);
 }
 
 \keyword{volatility}
