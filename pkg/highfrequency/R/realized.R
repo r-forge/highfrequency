@@ -3994,11 +3994,20 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   ui   = diag(rep(1,KKK));          #All parameters should be larger than zero, add extra constraints with rbind...  
   ci   = matrix(rep(0,dim(ui)[2]),ncol=1);  
   
-  x = optim( par = startingvalues, fn = heavy_likelihood,
-             data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ); # ADJUST maxit ?!!
+  x = try(optim( par = startingvalues, fn = heavy_likelihood,
+                 data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ) ); # ADJUST maxit ?!!
   #  x = constrOptim( theta = startingvalues, f = heavy_likelihood, 
   #                    grad=NULL,ui=ui, ci = ci, 
   #                    data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ); 
+  
+  
+  if( class(x)=="try-error"){
+    print("Error in likelihood optimization")
+    print(x)
+  }else{
+    if(x$convergence != 0){
+      print("Possible problem in likelihood optimization. Check convergence")   }
+  }
   
   # Get the output: 
   estparams = x$par; 
@@ -4007,10 +4016,10 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   # Get the list with: total-log-lik, daily-log-lik, condvars
   xx = heavy_likelihood(parameters = estparams, data=data, p=p, q=q, backcast=backcast, LB=LB, UB=UB, foroptim=FALSE, compconst = compconst);
   xx$estparams =  estparams;
+  xx$convergence = x$convergence
   
   return(xx)
-}  
-
+}
 transformparams = function( p, q, paramsvector ){
   K = dim(p)[1]; 
   pmax = max(p); qmax = max(q); # Max number of lags for innovations and cond vars
