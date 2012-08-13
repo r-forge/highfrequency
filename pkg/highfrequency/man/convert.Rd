@@ -82,6 +82,6 @@ convert(from,to,datasource,datadestination,trades=TRUE,
 
  convert(from=from, to=to, datasource=datasource, datadestination=datadestination, trades = T, 
             quotes = T, ticker="GLP", dir = TRUE, extension = "tickdatacom", header = TRUE, 
-            tradecolnames = NULL, quotecolnames = NULL, format = format, onefile = TRUE );  
+            tradecolnames = NULL, quotecolnames = NULL, format = "%d/%m/%Y %H:%M:%OS", onefile = TRUE );  
 }
 }

@@ -2247,7 +2247,6 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
         taqnames   = c("DATE","EX","TIME","PRICE","SIZE","COND","CORR","G127"); 
         data = alldata[,taqnames]; 
         data = cbind(rep(ticker,dim(data)[1]),data); colnames(data)[1] = "SYMBOL"; 
-        format = "%d/%m/%Y %H:%M:%S"; #tickdata always has this format
       }
       alldata = suppressWarnings(makeXtsTrades(tdata=data,format=format)); 
     }

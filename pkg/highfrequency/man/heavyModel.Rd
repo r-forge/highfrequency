@@ -13,7 +13,7 @@ heavyModel(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),ncol=2 ),
 }
 
 \arguments{ 
-   \item{data}{ a (T x K) matrix containing the data, with T the number of days. For the traditional HEAVY model: K = 2, the first column contains the squared daily returns, the second column contains the realized measures.
+   \item{data}{ a (T x K) matrix containing the data, with T the number of days. For the traditional HEAVY model: K = 2, the first column contains the squared daily demeaned returns, the second column contains the realized measures.
    }
    \item{p}{ a (K x K) matrix containing the lag length for the model innovations. Position (i, j) in the matrix indicates the number of lags in equation i of the model for the innovations in data column j. For the traditional heavy model p is given by matrix( c(0,0,1,1),ncol=2 ) (default). 
    }
@@ -31,8 +31,8 @@ estimation. If NULL it is set to a vector of Inf by default.}
 unconditional estimates are taken.
    }
    \item{compconst}{ a boolean variable. In case TRUE, the omega values are estimated in
-the optimization. In case FALSE, volatility targeting is done and omega is just the
-1 minus the sum of all relevant alpha's and beta's.
+the optimization. In case FALSE, volatility targeting is done and omega is just 
+1 minus the sum of all relevant alpha's and beta's multiplied by the unconditional variance.
    }
 }
 
