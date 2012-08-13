@@ -3992,14 +3992,16 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   # Set constraints: 
   KKK  = length(startingvalues);    
   ui   = diag(rep(1,KKK));          #All parameters should be larger than zero, add extra constraints with rbind...  
-  ci   = matrix(rep(0,dim(ui)[2]),ncol=1);  
+  ci   = rep(0,dim(ui)[2]);  
   
-  x = try(optim( par = startingvalues, fn = heavy_likelihood,
-                 data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ) ); # ADJUST maxit ?!!
-  #  x = constrOptim( theta = startingvalues, f = heavy_likelihood, 
-  #                    grad=NULL,ui=ui, ci = ci, 
-  #                    data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ); 
-  
+  # x = try(optim( par = startingvalues, fn = heavy_likelihood,
+  #           data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ) ); # ADJUST maxit ?!!
+  x = try(constrOptim( theta = startingvalues, f = heavy_likelihood, 
+                       grad = NULL,
+                       ui = ui, 
+                       ci = ci, 
+                       method = "L-BFGS-B",
+                       data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst));
   
   if( class(x)=="try-error"){
     print("Error in likelihood optimization")
@@ -4014,12 +4016,14 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   loglikelihood = x$value; 
   
   # Get the list with: total-log-lik, daily-log-lik, condvars
-  xx = heavy_likelihood(parameters = estparams, data=data, p=p, q=q, backcast=backcast, LB=LB, UB=UB, foroptim=FALSE, compconst = compconst);
+  xx = heavy_likelihood(par = estparams, data=data, p=p, q=q, backcast=backcast, LB=LB, UB=UB, foroptim=FALSE, compconst = compconst);
   xx$estparams =  estparams;
   xx$convergence = x$convergence
   
   return(xx)
 }
+
+
 transformparams = function( p, q, paramsvector ){
   K = dim(p)[1]; 
   pmax = max(p); qmax = max(q); # Max number of lags for innovations and cond vars
