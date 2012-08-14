@@ -3990,17 +3990,16 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   # Estimate the parameters: 
   # Set constraints: 
   KKK  = length(startingvalues);    
-  ui   = diag(rep(1,KKK));          #All parameters should be larger than zero, add extra constraints with rbind...  
+  ui   = diag(rep(1,KKK)); #All parameters should be larger than zero, add extra constraints with rbind...  
   ci   = rep(0,dim(ui)[2]);  
   
-  # x = try(optim( par = startingvalues, fn = heavy_likelihood,
-  #           data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ) ); # ADJUST maxit ?!!
-  x = try(constrOptim( theta = startingvalues, f = heavy_likelihood, 
-                       grad = NULL,
-                       ui = ui, 
-                       ci = ci, 
-                       method = "L-BFGS-B",
-                       data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst));
+  x = try(optim( par = startingvalues, fn = heavy_likelihood,
+                 data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ) ); # ADJUST maxit ?!!
+  #x = try(constrOptim( theta = startingvalues, f = heavy_likelihood, 
+  #                     grad = NULL,
+  #                     ui = ui, 
+  #                     ci = ci, 
+  #                     data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst));
   
   if( class(x)=="try-error"){
     print("Error in likelihood optimization")
@@ -4016,12 +4015,31 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   
   # Get the list with: total-log-lik, daily-log-lik, condvars
   xx = heavy_likelihood(par = estparams, data=data, p=p, q=q, backcast=backcast, LB=LB, UB=UB, foroptim=FALSE, compconst = compconst);
-  xx$estparams =  estparams;
+  
+  # Add the timestamps and make xts: condvar and likelihoods:
+  if( ! is.null(rownames(data)) ){
+    xx$condvar    = xts( t(xx$condvar),  order.by   = as.POSIXct( rownames(data),tz="GMT") );     
+    xx$likelihoods = xts( xx$likelihoods, order.by = as.POSIXct( rownames(data),tz="GMT"));
+  }
+  
+  # 
+  xx$estparams = matrix(estparams,ncol=1); 
+  rownames(xx$estparams) = .get_param_names(estparams,p,q);
   xx$convergence = x$convergence
   
   return(xx)
 }
 
+.get_param_names = function( estparams, p, q){
+  K = dim(p)[2];
+  nAlpha =  sum(p);
+  nBeta  =  sum(q);
+  omegas = paste("omega",1:K,sep="");
+  alphas = paste("alpha",1:nAlpha,sep="");
+  betas  = paste("beta", 1:nBeta,sep="");
+  names  = c(omegas,alphas,betas);
+  
+}
 
 transformparams = function( p, q, paramsvector ){
   K = dim(p)[1]; 
