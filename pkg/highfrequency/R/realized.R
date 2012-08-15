@@ -4114,6 +4114,7 @@ heavy_likelihood = function(parameters, data, p, q, backcast, LB, UB, foroptim=T
       }
     }#End loop over innovation lags
     
+    if( any( h[,t]>1e3 )){ break ;}
     # Check whether h's are between LB and UB:      
     for(j in 1:K){ #Loop over 
       if( h[j,t] < LB[j] ){  h[j,t] = LB[j]/(1- (h[j,t] - LB[j]) );}
@@ -4135,5 +4136,4 @@ heavy_likelihood = function(parameters, data, p, q, backcast, LB, UB, foroptim=T
     # (ii) likelihood parts per time period
     # (iii) matrix with conditional variances    
   } #end output in case you want params
-}    
-
+}
