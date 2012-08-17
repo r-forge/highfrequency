@@ -38,20 +38,21 @@ the optimization. In case FALSE, volatility targeting is done and omega is just
 
 \section{Details}{ 
 See vignette.
+NOTE: The implementation of the heavyModel is not completely finished. For the moment only bound constraints on the parameters are imposed in the optimization. Future developments also include outputting standard errors, and a c-implementation of the likelihood function to speed up the QML estimation.
 }
 
 \value{ 
 A list with the following values:
 (i) loglikelihood: The log likelihood evaluated at the parameter estimates.
-(ii) likelihoods: a vector of length T containing the log likelihoods per day.
-(iii) condvar: a (K x T) containing the conditional variances
+(ii) likelihoods: an xts object of length T containing the log likelihoods per day.
+(iii) condvar: a (T x K) xts object containing the conditional variances
 (iv) estparams: a vector with the parameter estimates. The order in which the
 parameters are reported is as follows: First the estimates for omega then the
 estimates for the non-zero alpha's with the most recent lags first in case max(p) > 1,
 then the estimates for the non-zero beta's with the most recent lag first in case
 max(q) > 1.
+(v) convergence: an integer code indicating the successfulness of the optimization. See \verb{optim} for more information.
 }
-
 
 \references{
 Shephard, N. and K. Sheppard (2010). Realising the future: forecasting with high

@@ -5,7 +5,7 @@
 Spot volatility estimation}
 
 \description{
-Function returns an estimate of the volatility \eqn{\sigma_{t,i}} of equispaced high-frequency returns \eqn{r_{t,i}} (read: the \eqn{i}th return
+Function returns an estimate of the standard deviation \eqn{\sigma_{t,i}} of equispaced high-frequency returns \eqn{r_{t,i}} (read: the \eqn{i}th return
 on day \eqn{t}). The underlying assumption is that, in the absence of price jumps, high-frequency returns
 are normally distributed with mean zero and standard deviation \eqn{\sigma_{t,i}}, where 
 the standard deviation is the product between a deterministic periodic factor \eqn{f_{i}} (identical for every day in the sample)
@@ -38,7 +38,7 @@ spotVol(pdata, dailyvol = "bipower", periodicvol = "TML",
    \item{on}{ character, indicating the time scale in which "k" is expressed. Possible values are: "secs", "seconds", "mins", "minutes","hours".}
    \item{k}{ positive integer, indicating the number of periods to aggregate over. E.g. to aggregate a 
    xts object to the 5 minute frequency set k=5 and on="minutes".}
-   \item{dummies}{ boolean, in case it is TRUE, the parametric estimator of periodic volatility specifies the periodicity function as the sum of dummy variables corresponding to each intraday period. 
+   \item{dummies}{ boolean, in case it is TRUE, the parametric estimator of periodic standard deviation  specifies the periodicity function as the sum of dummy variables corresponding to each intraday period. 
    If it false, the parametric estimator uses the Flexible Fourrier specification. FALSE by default.}
    \item{P1}{ is a positive integer valued parameter that corresponds to the number of cosinus terms used in the flexible fourrier specification for the periodicity function, see Andersen et al. (1997) for details.}
    \item{P2}{ is a positive integer valued parameter that corresponds to the number of sinus terms used in the flexible fourrier specification for the periodicity function, see Andersen et al. (1997) for details.}
@@ -47,8 +47,7 @@ spotVol(pdata, dailyvol = "bipower", periodicvol = "TML",
 }
 
 \details{
-Returns an xts object with first column equal to the high-frequency return series, second column is the estimated volatility, third column is 
-the daily volatility factor and, finally, the fourth column is the periodic component. 
+Returns an xts object with first column equal to the high-frequency return series, second column is the estimated standard deviation, third column is the daily standard deviation factor and, finally, the fourth column is the periodic component. 
 }
 
 \references{

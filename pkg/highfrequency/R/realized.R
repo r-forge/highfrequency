@@ -3994,14 +3994,15 @@ heavyModel = function(data, p=matrix( c(0,0,1,1),ncol=2 ), q=matrix( c(1,0,0,1),
   ci   = rep(0,dim(ui)[2]);  
   
   x = try(optim( par = startingvalues, fn = heavy_likelihood,
-                 data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst ) ); # ADJUST maxit ?!!
+                 data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, lower=LB,upper=UB, compconst = compconst ) ); # ADJUST maxit ?!!
+  
   #x = try(constrOptim( theta = startingvalues, f = heavy_likelihood, 
   #                     grad = NULL,
   #                     ui = ui, 
   #                     ci = ci, 
   #                     data=data, p=p, q=q,backcast=backcast,UB=UB,LB=LB, compconst = compconst));
   
-  if( class(x)=="try-error"){
+  if( class(x) == "try-error" ){
     print("Error in likelihood optimization")
     print(x)
   }else{
@@ -4060,13 +4061,13 @@ transformparams = function( p, q, paramsvector ){
     end   = start + sum(q>=i) -1; # How many non-zero params in this loop?
     B[[i]] = matrix(rep(0,K^2),ncol=2); 
     B[[i]][q >= i] = paramsvector[start:end];
-    start  = end+1;   
+    start  = end + 1;   
   }#End loop over number of lags for cond variances
   
   return( list(O,A,B) ) 
 }  
 
-heavy_likelihood = function(parameters, data, p, q, backcast, LB, UB, foroptim=TRUE, compconst=FALSE ){ 
+heavy_likelihood = function( par, data, p, q, backcast, LB, UB, foroptim=TRUE, compconst=FALSE ){ 
   # Get the required variables
   # p is Max number of lags for innovations 
   # q is Max number of lags for conditional variances
@@ -4077,7 +4078,7 @@ heavy_likelihood = function(parameters, data, p, q, backcast, LB, UB, foroptim=T
   maxp = max(p); maxq=max(q);
   
   # Get the parameters:
-  x = transformparams( parameters, p=p, q=q );
+  x = transformparams( par, p=p, q=q );
   if( compconst ){ O = x[[1]]; } 
   A = x[[2]]; B = x[[3]]; 
   # Compute constant in case it needn't to be optimized:
