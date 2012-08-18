@@ -34,9 +34,8 @@ numeric
 }
 
 \references{ 
-Andersen, T. G., D. Dobrev, and E. Schaumburg (2009). Jump-robust volatility 
-estimation using nearest neighbor truncation. NBER Working Paper No.
-15533.}
+Andersen, T. G., D. Dobrev, and E. Schaumburg (2012). Jump-robust volatility estimation using nearest neighbor truncation. Journal of Econometrics, 169 (1), 75-93.
+}
 
 \author{ Jonathan Cornelissen and Kris Boudt}
 \examples{
