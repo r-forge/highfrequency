@@ -32,7 +32,7 @@ the standard NYSE data format is taken, see pdf documentation for more details.}
 \item{quotecolnames}{ vector containing column names of your quote data. By default, 
 the standard NYSE data format is taken, see pdf documentation for more details.}
 \item{format}{ character, indicates in what format TIME and DATE are recorded in the original data.
-By default, "\%Y\%M\%D \%H:\%M:\%S" is taken, which means the date is denoted by e.g. "20080130" and the time by e.g. "09:30:00".}
+By default, \%Y\%m\%d \%H:\%M:\%S" is taken, which means the date is denoted by e.g. "20080130" and the time by e.g. "09:30:00".}
 \item{onefile}{  
 indicates the way the source data is stored. By default FALSE, which means the function expects that the source data is saved in a folder sturcture with a folder for each date (see vignette for more info). In case the data for multiple days is stored in one file, set onefile=TRUE. The naming convention for files is, e.g. for ticker="AAPL", "AAPL_trades.extension" and "AAPL_quotes.extension" for trades and quotes respectively.}
 }

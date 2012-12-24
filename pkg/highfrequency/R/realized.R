@@ -2319,7 +2319,7 @@ uniTAQload = function(ticker,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,va
   ##Function to load the taq data from a certain stock 
   #From&to (both included) should be in the format "%Y-%m-%d" e.g."2008-11-30"
   dates = timeSequence(as.character(from),as.character(to), format = "%Y-%m-%d", FinCenter = "GMT")
-  dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
+  dates = dates[isBizday(dates, holidays = holidayNYSE(1960:2040))];
   
   if(trades){ tdata=NULL;
               for(i in 1:length(dates)){
