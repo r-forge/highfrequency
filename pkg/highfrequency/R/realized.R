@@ -1,6 +1,6 @@
 # This file contains all realized measures previously implemented in RTAQ and realized
 ######################################################## 
-## Help functions: (not exported)
+## Help functions: (not exported) 
 ######################################################## 
 .multixts <- function( x, y=NULL)
 { 
@@ -2214,7 +2214,7 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
   if( onefile == FALSE ){
     
     # Create trading dates:
-    dates = timeSequence(from, to, format = "%Y-%m-%d", FinCenter = "GMT")
+    dates = timeSequence(from, to, format = "%Y-%m-%d")
     dates = dates[isBizday(dates, holidays = holidayNYSE(1950:2030))];
     
     # Create folder structure for saving:
@@ -2318,7 +2318,7 @@ TAQLoad = function(tickers,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,vari
 uniTAQload = function(ticker,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,variables=NULL){
   ##Function to load the taq data from a certain stock 
   #From&to (both included) should be in the format "%Y-%m-%d" e.g."2008-11-30"
-  dates = timeSequence(as.character(from),as.character(to), format = "%Y-%m-%d", FinCenter = "GMT")
+  dates = timeSequence(as.character(from),as.character(to), format = "%Y-%m-%d")
   dates = dates[isBizday(dates, holidays = holidayNYSE(1960:2040))];
   
   if(trades){ tdata=NULL;
@@ -3141,8 +3141,8 @@ tradesCleanup = function(from,to,datasource,datadestination,ticker,exchanges,tda
   
   nresult = rep(0,5);
   if(is.null(tdataraw)){
-    dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
-    dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
+    dates = timeSequence(from,to, format = "%Y-%m-%d");
+    dates = dates[isBizday(dates, holidays = holidayNYSE(1960:2040))];
     
     for(j in 1:length(dates)){
       datasourcex = paste(datasource,"/",dates[j],sep="");
@@ -3211,8 +3211,8 @@ tradesCleanup = function(from,to,datasource,datadestination,ticker,exchanges,tda
 quotesCleanup = function(from,to,datasource,datadestination,ticker,exchanges, qdataraw=NULL,report=TRUE,selection="median",maxi=50,window=50,type="advanced",rmoutliersmaxi=10,...){
   nresult = rep(0,7);
   if(is.null(qdataraw)){
-    dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
-    dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
+    dates = timeSequence(from,to, format = "%Y-%m-%d");
+    dates = dates[isBizday(dates, holidays = holidayNYSE(1960:2040))];
     
     for(j in 1:length(dates)){
       datasourcex = paste(datasource,"/",dates[j],sep="");
@@ -3284,8 +3284,8 @@ quotesCleanup = function(from,to,datasource,datadestination,ticker,exchanges, qd
 
 tradesCleanupFinal = function(from,to,datasource,datadestination,ticker,tdata=NULL,qdata=NULL,...){
   if(is.null(tdata)&is.null(qdata)){
-    dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
-    dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
+    dates = timeSequence(from,to, format = "%Y-%m-%d");
+    dates = dates[isBizday(dates, holidays = holidayNYSE(1960:2040))];
     
     for(j in 1:length(dates)){
       datasourcex = paste(datasource,"/",dates[j],sep="");
@@ -3627,10 +3627,10 @@ rmLargeSpread = function(qdata,maxi=50){
   return(qdata[condition])
 }
 
-rmOutliers = function (qdata, maxi = 10, window = 50, type = "advanced")
+rmOutliers =  function (qdata, maxi = 10, window = 50, type = "advanced")
 {
-  qdata = .check_data(qdata);
-  qdatacheck(qdata);
+  qdata = .check_data(qdata)
+  qdatacheck(qdata)
   ##function to remove entries for which the mid-quote deviated by more than 10 median absolute deviations 
   ##from a rolling centered median (excluding the observation under consideration) of 50 observations if type = "standard".
   
@@ -3643,31 +3643,31 @@ rmOutliers = function (qdata, maxi = 10, window = 50, type = "advanced")
   ##3. Rolling median of the previous "window" observations
   
   ##NOTE: Median Absolute deviation chosen contrary to Barndorff-Nielsen et al.
+  
   window = floor(window/2) * 2
-  condition = c();
-  halfwindow = window/2;
-  midquote = as.vector(as.numeric(qdata$BID) + as.numeric(qdata$OFR))/2;
-  mad_all = mad(midquote);
-  
-  midquote = xts(midquote,order.by = index(qdata))
-  
+  condition = c()
+  halfwindow = window/2
+  midquote = as.vector(as.numeric(qdata$BID) + as.numeric(qdata$OFR))/2
+  mad_all = mad(midquote)
+  midquote = xts(midquote, order.by = index(qdata))
   if (mad_all == 0) {
     m = as.vector(as.numeric(midquote))
-    s = c(TRUE, (m[2:length(m)] - m[1:(length(m) - 1)] != 
-      0))
+    s = c(TRUE, (m[2:length(m)] - m[1:(length(m) - 1)] !=
+                   0))
     mad_all = mad(as.numeric(midquote[s]))
   }
-  
   medianw = function(midquote, n = window) {
     m = floor(n/2) + 1
-    q = median(c(midquote[1:(m - 1)], midquote[(m + 1):(n + 
-      1)]))
+    q = median(c(midquote[1:(m - 1)], midquote[(m + 1):(n +
+                                                          1)]))
     return(q)
   }
-  
   if (type == "standard") {
-    meds = as.numeric(rollapply(midquote, width = (window + 
-      1), FUN = medianw, align = "center"))
+    meds = as.numeric(rollapply(midquote, width = (window +
+                                                     1), FUN = medianw, align = "center"))
+    #
+    meds = meds[(halfwindow +
+                   1):(n - halfwindow)]
   }
   if (type == "advanced") {
     advancedperrow = function(qq) {
@@ -3684,28 +3684,32 @@ rmOutliers = function (qdata, maxi = 10, window = 50, type = "advanced")
     median2 = function(a) {
       median(a)
     }
-    standardmed = as.numeric(rollapply(midquote, width = (window), 
+    standardmed = as.numeric(rollapply(midquote, width = (window),
                                        FUN = median2, align = "center"))
-    allmatrix[(halfwindow + 1):(n - halfwindow), 1] = as.numeric(rollapply(midquote, 
-                                                                           width = (window + 1), FUN = medianw, align = "center"))
-    allmatrix[(1:(n - window)), 2] = standardmed[2:length(standardmed)]
-    allmatrix[(window + 1):(n), 3] = standardmed[1:(length(standardmed) - 
-      1)]
+    # allmatrix[(halfwindow + 1):(n - halfwindow), 1] = as.numeric(rollapply(midquote,
+    #     width = (window + 1), FUN = medianw, align = "center"))
+    # Rolling centered median (excluding the observation under consideration)
+    allmatrix[, 1] = as.numeric(rollapply(midquote,
+                                          width = (window + 1), FUN = medianw, align = "center"))
+    #Rolling median of the following "window" observations
+    #allmatrix[(1:(n - window)), 2] = standardmed[2:length(standardmed)]
+    allmatrix[(1:(n - 1)), 2] = standardmed[2:length(standardmed)]
+    #Rolling median of the previous "window" observations
+    # allmatrix[(window + 1):(n), 3] = standardmed[1:(length(standardmed) -1)]
+    allmatrix[(1 + 1):(n), 3] = standardmed[1:(length(standardmed) -1)]
     allmatrix[, 4] = midquote
-    meds = apply(allmatrix, 1, advancedperrow)[(halfwindow + 
-      1):(n - halfwindow)]
+    meds = apply(allmatrix, 1, advancedperrow)[(halfwindow +
+                                                  1):(n - halfwindow)]
   }
-  
-  midquote = as.numeric(midquote);
+  midquote = as.numeric(midquote)
   maxcriterion = meds + maxi * mad_all
   mincriterion = meds - maxi * mad_all
+  condition = mincriterion < midquote[(halfwindow + 1):(length(midquote) -
+                                                          halfwindow)] & midquote[(halfwindow + 1):(length(midquote) -
+                                                                                                      halfwindow)] < maxcriterion
+  condition = c(rep(TRUE, halfwindow), condition, rep(TRUE, halfwindow))
   
-  condition = mincriterion < midquote[(halfwindow + 1):(length(midquote) - 
-    halfwindow)] & midquote[(halfwindow + 1):(length(midquote) - 
-    halfwindow)] < maxcriterion
-  condition = c(rep(TRUE, halfwindow), condition, rep(TRUE, 
-                                                      halfwindow))
-  qdata[condition];
+  qdata[condition]
 }
 
 # Zivot : 
