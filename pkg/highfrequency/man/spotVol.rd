@@ -34,7 +34,7 @@ spotVol(pdata, dailyvol = "bipower", periodicvol = "TML",
   \item{dailyvol}{determines the estimation method for the component of intraday volatility that is constant over the day, but changes 
   from day to day. Possible values are "bipower","rv", "medrv".}
    \item{periodicvol}{determines the estimation method for the component of intraday volatility that depends in a deterministic way on the intraday time
-   at which the return is observed. Possible values are "TML","sd", "wsd", "OLS".}
+   at which the return is observed. Possible values are "TML","SD", "WSD", "OLS".}
    \item{on}{ character, indicating the time scale in which "k" is expressed. Possible values are: "secs", "seconds", "mins", "minutes","hours".}
    \item{k}{ positive integer, indicating the number of periods to aggregate over. E.g. to aggregate a 
    xts object to the 5 minute frequency set k=5 and on="minutes".}
