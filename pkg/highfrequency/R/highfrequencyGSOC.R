@@ -1,8 +1,4 @@
-
-
-
-minRQ = function(rdata,align.by=NULL,align.period = NULL, makeReturns = FALSE,...)
-{
+minRQ = function(rdata,align.by=NULL,align.period = NULL, makeReturns = FALSE,...){
   if (hasArg(data)) 
     {
     rdata = data
@@ -10,7 +6,7 @@ minRQ = function(rdata,align.by=NULL,align.period = NULL, makeReturns = FALSE,..
   multixts = highfrequency:::.multixts(rdata)
   if (multixts) 
     {
-    result = apply.daily(rdata, minRQ, align.by, align.period, makeReturns) ##Check FUN
+    result = apply.daily(rdata, minRQ, align.by, align.period, makeReturns)
     return(result)
   }
   if (!multixts) 
@@ -40,7 +36,7 @@ medRQ = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   multixts = highfrequency:::.multixts(rdata)
   if (multixts) 
   {
-    result = apply.daily(rdata, medRQ, align.by, align.period, makeReturns) ##Check FUN
+    result = apply.daily(rdata, medRQ, align.by, align.period, makeReturns) 
     return(result)
   }
   if (!multixts) 
@@ -52,14 +48,13 @@ medRQ = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
     {
       rdata = makeReturns(rdata)
     }
-  q=abs(as.numeric(rdata))
-  q=as.numeric(rollmedian(q, k = 3))
+  q = abs(as.numeric(rdata))
+  q = as.numeric(rollmedian(q, k = 3,align="center"))
   N = length(q)+2
   medRQ = 3*pi*N/(9*pi+72-53*sqrt(3))*(N/(N-2))*sum(q^4)
   return(medRQ)
   } 
 }
-
 
 rQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,...)
 {
@@ -70,7 +65,7 @@ rQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   multixts = highfrequency:::.multixts(rdata)
   if (multixts) 
   {
-    result = apply.daily(rdata, rQuar, align.by, align.period, ##check FUN
+    result = apply.daily(rdata, rQuar, align.by, align.period,
                          makeReturns)
     return(result)
   }
@@ -133,7 +128,7 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
   multixts = highfrequency:::.multixts(rdata)
   if (multixts) 
   {
-    result = apply.daily(rdata, rTPVar, align.by, align.period, ##check FUN
+    result = apply.daily(rdata, rTPVar, align.by, align.period,
                          makeReturns)
     return(result)
   }
@@ -158,68 +153,32 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
 
   
 ## Standard error and confidence band of RV measures
-  ivInference = function(rdata, IVestimator="RV", IQestimator="rQuar", confidence=0.95, align.by= NULL, align.period = NULL, makeReturns = FALSE, ...)
-  {
-    if (hasArg(data)) 
-    {
-      rdata = data
-    }
+ivInference = function(rdata, IVestimator="RV", IQestimator="rQuar", confidence=0.95, align.by= NULL, align.period = NULL, makeReturns = FALSE, ...)
+{
+    if (hasArg(data)){    rdata = data  }
+    
     multixts =highfrequency:::.multixts(rdata)
     if (multixts) 
     {
       result = apply.daily(rdata, ivInference, align.by, align.period, ##check FUN
                            makeReturns)
       return(result)
-    }
-    if (!multixts) 
-    {
-      if ((!is.null(align.by)) && (!is.null(align.period))) {
+    }else{
+      if((!is.null(align.by)) && (!is.null(align.period))){
         rdata =highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
       }
       
-      if(makeReturns)
-      {
-        rdata=makeReturns(rdata)
-      }
+      if(makeReturns){  rdata=makeReturns(rdata)  }
       
-      N=length(rdata)
-      p= as.numeric(confidence)
+      N = length(rdata)
+      p = as.numeric(confidence)
       
-      ##IQ estimator: 
-      IQ=function(rdata,IQestimator)
-      {
-        switch(IQestimator,
-               RQuart= rQuar(rdata),
-               QP= QP(rdata),
-               minRQ= minRQ(rdata),
-               medRQ= medRQ(rdata))
-      }
-      iq= IQ(rdata,IQestimator)
+      iq = .hatiq(rdata,IQestimator)
       
-      ##IV estimator: 
-      IV=function(IVestimator,iq)
-      {
-        switch(IVestimator,
-               RV= sqrt(2*iq),
-               BV= sqrt(2.61*iq),
-               TV= sqrt(3.06*iq),
-               minRV= sqrt(3.81*iq),
-               medRV= sqrt(2.96*iq))
-      }
-      iv= IV(IVestimator,iq)
+      iv = .IV(IVestimator,iq)
       
-      ##hatIV
-      hativ=function(rdata,IVestimator)
-      {
-        switch(IVestimator,
-               RV= highfrequency:::RV(rdata),
-               BV= highfrequency:::RBPVar(rdata),
-               TV= TP(rdata),
-               minRV= minRV(rdata),
-               medRV= medRV(rdata))
-      }
       
-      hatIV=hativ(rdata, IVestimator)
+      hatIV = .hativ(rdata, IVestimator)
       
       stderr= 1/sqrt(N)*iv
       
@@ -234,232 +193,77 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
       out$se= stderr
       out$cb= cb
       
-      
       return(out)
     }
-  }
-  
-
-
-
-
-# thetaROWVar(k=qchisq(0.95,df=1),alpha=0.25); thetaROWVar(k=qchisq(0.99,df=1),alpha=0.25); 
-
-# thetaROWVar(k=qchisq(0.999,df=1),alpha=0.25); 
-
-
+}
 
 thetaROWVar = function( alpha = 0.001 , alphaMCD = 0.5 )
-  
 {
+  N = 1;  
+  q_alpha = qchisq( 1-alpha , df = N );  
+  c_alpha = (1-alpha)/pchisq( q_alpha , df = N+2 );  
+  a_alpha = -2*sqrt(q_alpha)*dnorm(sqrt(q_alpha))+1-alpha;  
+  b_alpha = -2*q_alpha^(3/2)*dnorm(sqrt(q_alpha))+3*a_alpha;
   
-  IF_MCD = function( x , alpha = alphaMCD ){
-    
-    N = 1
-    
-    q = qchisq( 1-alpha , df = N )
-    
-    calpha = (1-alpha)/pchisq( q , df = N+2 )
-    
-    out = ( (x^2-q)/(1-alpha) )*( abs(x) <= sqrt(q) ) 
-    
-    return( -1+q*calpha + calpha*out ) 
-    
-  }
-  
-  
-  
-  int = function(x){
-    
-    return( IF_MCD(x)*x^2*dnorm(x) )
-    
-  }
-  
-  
-  
-  int = function(x){
-    
-    return( IF_MCD(x)^2*dnorm(x) )
-    
-  }
-  
-  
-  
-  avar_MCD = function(alpha){
-     N = 1
-    
-    q_alpha = qchisq( 1-alpha , df = N )
-    
-    c_alpha = (1-alpha)/pchisq( q_alpha , df = N+2 )
-    
-    a_alpha = -2*sqrt(q_alpha)*dnorm(sqrt(q_alpha))+1-alpha
-    
-    b_alpha = -2*q_alpha^(3/2)*dnorm(sqrt(q_alpha))+3*a_alpha
-    
-    
-    
-    avar = c_alpha^2*q_alpha^2+1-2*c_alpha*q_alpha
-    
-    avar = avar + c_alpha^2/(1-alpha)^2*(b_alpha+q_alpha^2*(1-alpha)-2*q_alpha*a_alpha)
-    
-    avar = avar + 2*( c_alpha*q_alpha - 1)*c_alpha*(1/(1-alpha))*(-q_alpha*(1-alpha)+a_alpha) 
-    
-    return(avar)
-    
-  }
-  
-  N = 1
-  
-  q_alpha = qchisq( 1-alpha , df = N )
-  
-  c_alpha = (1-alpha)/pchisq( q_alpha , df = N+2 )
-  
-  a_alpha = -2*sqrt(q_alpha)*dnorm(sqrt(q_alpha))+1-alpha
-  
-  b_alpha = -2*q_alpha^(3/2)*dnorm(sqrt(q_alpha))+3*a_alpha
-  
-  
-  
+  k = qchisq(1-alpha, df= 1); #TODO GIANG ## suggestion in the article.
   halfk = sqrt(k); halfq = sqrt(q_alpha) 
   
-  
-  
   Ewu2   = 2*pnorm(halfk)-1;
-  
   Ewu2u2 = -2*halfk*dnorm(halfk)+Ewu2;
-  
   Ewu2u4 = -2*(k^(3/2))*dnorm(halfk)+3*Ewu2u2;
-  
-  
-  
-  Ewu2u2IF = (-1+c_alpha*q_alpha-(c_alpha*q_alpha)/(1-alpha))*a_alpha+c_alpha*b_alpha/(1-alpha)
-  
-  Ewu2u2IF = Ewu2u2IF + 2*(1-c_alpha*q_alpha)*(
     
-    halfk*dnorm(halfk)-halfq*dnorm(halfq) + 1 - alpha/2 - pnorm(halfk)   )
-  
+  Ewu2u2IF = (-1+c_alpha*q_alpha-(c_alpha*q_alpha)/(1-alpha))*a_alpha+c_alpha*b_alpha/(1-alpha)
+  Ewu2u2IF = Ewu2u2IF + 2*(1-c_alpha*q_alpha)*(
+  halfk*dnorm(halfk)-halfq*dnorm(halfq) + 1 - alpha/2 - pnorm(halfk)   )
   Ewu2IF = (alpha-1-c_alpha*q_alpha*alpha) + c_alpha*a_alpha/(1-alpha) + 2*(c_alpha*q_alpha-1)*( pnorm(halfk)-(1-alpha/2))
-  
   Ederwu2u4 = -k^(3/2)*dnorm(halfk);
-  
   Ederwu2u2 = -halfk*dnorm(halfk);
-  
   c1 = 1/Ewu2u2;   c2 = 1/Ewu2;   c3 = c2*Ederwu2u2-c1*Ederwu2u4
-  
-  Avar0 = avar_MCD(alpha)
-  
+  Avar0 = .avar_MCD(alpha)
   theta = c3^2*Avar0 + c1^2*Ewu2u4 + c2^2*Ewu2 - 2*c1*c2*Ewu2u2;
-  
   theta = theta + 2*c3*( c1*Ewu2u2IF-c2*Ewu2IF );
   
   return( theta );
-  
 }
 
-  
 ##Jump-test: BNS with threshold
 BNSjumptest=function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear", logtransform= FALSE, max= FALSE, 
                      align.by= NULL, align.period= NULL, makeReturns = FALSE, startV= NULL,...)
 {
-  if (hasArg(data)) 
-  {
-    rdata = data
-  }
+  if (hasArg(data)){  rdata = data  }
+  
   multixts = highfrequency:::.multixts(rdata)
-  if (multixts) 
-  {
+  
+  if (multixts){
     result = apply.daily(rdata, BNSjumptest, align.by, align.period, makeReturns) ##Check FUN
     return(result)
-  }
-  if (!multixts) 
-  {
-    if ((!is.null(align.by)) && (!is.null(align.period))) {
+  }else{
+    if((!is.null(align.by)) && (!is.null(align.period))) {
       rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
-    }
-    if(makeReturns)
-    {
-      rdata = makeReturns(rdata)
-    }
+  }
+    
+  if(makeReturns){    rdata = makeReturns(rdata) }
     
     N=length(rdata)
     
     ## hatQV
     hatQV = highfrequency:::RV(rdata)
     
-    
     ## threshold BV
-    ##Gaussian kernel:   
-    Gaus.ker= function(y)
-    {
-      ky=(1/sqrt(2*pi)*exp(-y^2/2))
-    }
-    
-    ##hatV:
+        
+    ## hatV: TODO this is not the right place, move to where it is always needed
     if(is.null(startV))
     {
-      hatV= medRV(rdata)
-    }
-    else(hatV=startV)
-    
-    ##zgamma function: 
-    zgamma=function(x,y)
-    {
-      if(x^2<y)
-      {
-        out=abs(x)
-      }
-      else(out=1.094*sqrt(y))
-      return(out)
-    }
-    
-    ##corrected threshold bipower variation: 
-    ctBV= function(rdata)
-    {
-      q=as.numeric(rdata)
-      
-      v=3^2*hatV
-      z1= zgamma(rdata[2:N],v)  ##check formula
-      z2= zgamma(rdata[1:(N-1),v]) ##check formula
-      
-      ctbv= (pi/2)*sum(z1*z2)
-      
-      return(ctbv)
-    }
-    
-    ##hatIV
-    hativ=function(rdata,IVestimator)
-    {
-      switch(IVestimator,
-             BV= highfrequency:::RBPVar(rdata),
-             minRV=minRV(rdata),
-             medRV=medRV(rdata),
-             ROWvar = rOWCov(rdata,alphaMCD=alphaMCD,alpha=alpha),
-             CTBV=ctBV(rdata))
-    }
-    hatIV=hativ(rdata, IVestimator)
-    
+      hatV = medRV(rdata)
+    }else{ hatV = startV }
+        
+    hatIV = .hativ( rdata, IVestimator, hatV=hatV, N=N, ... )
+        
     ##theta
-    tt=function(IVestimator)
-    {
-      switch(IVestimator,
-             BV= 2.61,
-             minRV= 3.81,
-             medRV= 2.96,
-             ROWVar = thetaROWVar(alpha,alphaMCD))
-    }
-    theta=tt(IVestimator)    
+    theta = .tt(IVestimator,...)    
     
     ##hatIQ
-    hatiq=function(rdata,IQestimator)
-    {
-      switch(IQestimator,
-             TP= rTPVar(rdata),
-             QP= rQPVar(rdata),
-             minRQ= minRQ(rdata),
-             medRQ= medRQ(rdata))
-    }
-    hatIQ=hatiq(rdata, IQestimator)
-    
+    hatIQ = .hatiq(rdata, IQestimator)
     
     ## linear or ratio
     if(type=="linear")
@@ -467,23 +271,23 @@ BNSjumptest=function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear"
       ##logtransform
       if(logtransform)
       {
-        hatQV= log(highfrequency:::RV(rdata))
-        hatIV=log(hativ(rdata,IVestimator))
+        hatQV = log(highfrequency:::RV(rdata))
+        hatIV = log(.hativ(rdata,IVestimator))
       }
       if(!logtransform)
       {
-        hatQV= highfrequency:::RV(rdata)
-        hatIV= hativ(rdata,IVestimator)
+        hatQV = highfrequency:::RV(rdata)
+        hatIV = .hativ(rdata,IVestimator)
       }
       
       ## max argument
       if(max)
       {
-        product= max(1,hatiq(rdata,IQestimator)/hativ(rdata,IVestimator)^2)
+        product = max(1,.hatiq(rdata,IQestimator)/.hativ(rdata,IVestimator)^2)
       }
       if(!max)
       {
-        product= hatiq(rdata,IQestimator)
+        product = .hatiq(rdata,IQestimator)
       }
       a=sqrt(N)*(hatQV-hatIV)/sqrt((theta-2)*product)
       out={}
@@ -498,13 +302,13 @@ BNSjumptest=function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear"
       ## max argument
       if(max)
       {
-        product= max(1,hatiq(rdata,IQestimator)/hativ(rdata,IVestimator)^2)
+        product = max(1,.hatiq(rdata,IQestimator)/.hativ(rdata,IVestimator)^2)
       }
       if(!max)
       {
-        product= hatiq(rdata,IQestimator)/hativ(rdata,IVestimator)^2
+        product = .hatiq(rdata,IQestimator)/.hativ(rdata,IVestimator)^2
       }
-      a=sqrt(N)*(1-hativ(rdata,IVestimator)/highfrequency:::RV(rdata))/sqrt((theta-2)*product)
+      a=sqrt(N)*(1-.hativ(rdata,IVestimator)/highfrequency:::RV(rdata))/sqrt((theta-2)*product)
       out={}
       out$ztest=a
       out$critical.value= qnorm(c(0.025,0.975))
@@ -569,132 +373,56 @@ BNSjumptest=function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear"
 ## AJjumptest:
 AJjumptest= function(pdata, p=4 , k=2, align.by= NULL, align.period = NULL, makeReturns= FALSE, ...)
 {
-  if (hasArg(data)) 
-  {
-    pdata = data
-  }
+  if (hasArg(data)){    pdata = data  }
+  
   multixts = highfrequency:::.multixts(pdata)
-  if (multixts) 
-  {
-    result = apply.daily(pdata, AJjumptest, align.by, align.period, makeReturns) ##Check FUN
-    return(result)
-  }
-  if (!multixts) 
-  {
-    if ((!is.null(align.by)) && (!is.null(align.period))) {
-      pdata = highfrequency:::.aggregatets(pdata, on = align.by, k = align.period)
-    }
     
-  multixts = highfrequency:::.multixts(pdata)
   if (multixts) 
   {
-    result = apply.daily(pdata, AJjumptest, align.by, align.period, makeReturns) ##Check FUN
+    result = apply.daily(pdata, AJjumptest, align.by, align.period, makeReturns) ## Check FUN
     return(result)
-  }
-  if (!multixts) 
-  {
+  }else{
     pdata = highfrequency:::.aggregatets(pdata, on = "seconds", k = 1)
   }
     
-    N=length(pdata)-1
-    p= as.numeric(p)
-    k= as.numeric(k)
-    alpha= (1-1/p)/2 ## discuss this value
-    w= 0.47
-    cvalue= alpha*(1/N)^w
-  
-  ## scale
-    scale = function(align.by)
-    {
-      switch(align.by,
-             "seconds"= as.numeric(1),
-             "minutes"= as.numeric(60),
-             "hours"= as.numeric(3600))
-    }
-    
-    h= align.period * scale(align.by)
+    N = length(pdata)-1
+    p = as.numeric(p)
+    k = as.numeric(k)
+    alpha = (1-1/p)/2 ## discuss this value
+    w = 0.47
+    cvalue = alpha*(1/N)^w
+      
+    h = align.period * .scale(align.by)
     hk= h*k
     
-    seq1= seq(1, N, h)
-    seq2= seq(1, N, hk)
+    seq1 = seq(1, N, h)
+    seq2 = seq(1, N, hk)
     
   # return data
-    pdata1= pdata[seq1]
-    pdata2= pdata[seq2]
+    pdata1 = pdata[seq1]
+    pdata2 = pdata[seq2]
     
-    r= abs(makeReturns(pdata))
-    r1= abs(makeReturns(pdata1))
-    r2= abs(makeReturns(pdata2))
+    r  = abs(makeReturns(pdata));
+    r1 = abs(makeReturns(pdata1));
+    r2 = abs(makeReturns(pdata2));
    
-    pv1=sum(r1^p)
-    pv2=sum(r2^p)
+    pv1 = sum(r1^p)
+    pv2 = sum(r2^p)
     
-    S=pv1/pv2
+    S = pv1/pv2
   
   ## selection return:
-    selection<- abs(r)<cvalue
-    rse= abs(makeReturns(pdata[selection]))
-  
-  ##mupk
-  fmupk = function(p,k){
-    mupk = NULL;
-    if(p==2){
-      mupk = switch(as.character(k),
-             "2" = 4.00,
-             "3" = 5.00,
-             "4" = 6.00)
-    }
-    if(p==3){
-      mupk = switch(as.character(k),
-               "2" = 24.07,
-               "3" = 33.63,
-               "4" = 43.74)
-    }
-    if(p==4){
-      mupk = switch(as.character(k),
-               "2" = 204.04,
-               "3" = 320.26,
-               "4" = 455.67)
-    }
-    if(is.null(mupk)){
-      # reduce simulation error by taking large T and large nrep
-      vmupk = rep(NA,times= 100)
-      for( i in 1:nrep){
-        print(i)
-        vmupk[i] = fmupk(p,k)  
-      }
-      mupk = round(mean(vmupk),2)
+    selection <- abs(r) < cvalue
+    rse <- abs(makeReturns(pdata[selection]))
     
-    }
-    return(mupk)
-  }
-  
-  Npk = function(p,k){
-    mup= 2^(p/2)*gamma(1/2*(p+1))/gamma(1/2)
-    mu2p= 2^((2*p)/2)*gamma(1/2*((2*p)+1))/gamma(1/2)
-      
-    npk= (1/mup^2)*(k^(p-2)*(1+k))*mu2p + k^(p-2)*(k-1)*mup^2-2*k^(p/2-1)*fmupk(p,k)
-    return(npk)
-    }
-  V = function(rse,p,k){
-    mup= 2^(p/2)*gamma(1/2*(p+1))/gamma(1/2)
-    muhalfp= 2^(p/4)*gamma(1/2*(p/2+1))/gamma(1/2)
-    A2p= (1/N)^(1-p/2)/mup*sum(rse^p)
-    Ap= (1/N)^(1-p/4)/muhalfp*sum(rse^(p/2))   ##check formula  
-    
-    V= Npk(p,k) *A2p/(N*Ap) ##check formula: A(p), A(2p)
-    return(V)
-    } 
-  
   ## AJ test: 
-    AJtest= (S-k^(p/2-1))/sqrt(V(rse,p,k))
+    AJtest= (S-k^(p/2-1))/sqrt(.V(rse,p,k,N))
     
-    out={}
-    out$ztest= AJtest
-    out$critical.value= qnorm(c(0.025,0.975))
-    out$pvalue= 2*pnorm(-abs(AJtest))
+    out = {};
+    out$ztest= AJtest;
+    out$critical.value= qnorm(c(0.025,0.975));
+    out$pvalue= 2*pnorm(-abs(AJtest));
     return(out)  
-  }
 }    
 
 ##Realized semivariance
@@ -707,7 +435,7 @@ rSV= function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,.
   multixts =highfrequency::: .multixts(rdata)
   if (multixts) 
   {
-    result = apply.daily(rdata, rSV, align.by, align.period,  ##check FUN
+    result = apply.daily(rdata, rSV, align.by, align.period,  
                          makeReturns)
     return(result)
   }
@@ -747,7 +475,7 @@ rSkew= function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE
   multixts =highfrequency::: .multixts(rdata)
   if (multixts) 
   {
-    result = apply.daily(rdata, rSkew, align.by, align.period,  ##check FUN
+    result = apply.daily(rdata, rSkew, align.by, align.period,
                          makeReturns)
     return(result)
   }
@@ -783,7 +511,7 @@ rKurt= function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE
   multixts =highfrequency::: .multixts(rdata)
   if (multixts) 
   {
-    result = apply.daily(rdata, rKurt, align.by, align.period,  ##check FUN
+    result = apply.daily(rdata, rKurt, align.by, align.period,
                          makeReturns)
     return(result)
   }
@@ -1078,4 +806,173 @@ rBeta= function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRet
     rbeta = rcov/rv
     return(rbeta)
   }
+}
+
+############### INTERNAL HELP FUNCTIONS ############### 
+### thetaROWVar help functions:
+.IF_MCD = function( x, alpha ){
+  N = 1
+  q = qchisq( 1-alpha , df = N )
+  calpha = (1-alpha)/pchisq( q , df = N+2 )
+  out = ( (x^2-q)/(1-alpha) )*( abs(x) <= sqrt(q) ) 
+  
+  return( -1+q*calpha + calpha*out ) 
+}
+
+# .int = function(x){ 
+#   return( .IF_MCD(x)^2*dnorm(x) )
+# }
+
+.avar_MCD = function(alpha){
+  N = 1
+  q_alpha = qchisq( 1-alpha , df = N )
+  c_alpha = (1-alpha)/pchisq( q_alpha , df = N+2 )
+  a_alpha = -2*sqrt(q_alpha)*dnorm(sqrt(q_alpha))+1-alpha
+  b_alpha = -2*q_alpha^(3/2)*dnorm(sqrt(q_alpha))+3*a_alpha
+  
+  avar = c_alpha^2*q_alpha^2+1-2*c_alpha*q_alpha
+  avar = avar + c_alpha^2/(1-alpha)^2*(b_alpha+q_alpha^2*(1-alpha)-2*q_alpha*a_alpha)
+  avar = avar + 2*( c_alpha*q_alpha - 1)*c_alpha*(1/(1-alpha))*(-q_alpha*(1-alpha)+a_alpha) 
+  
+  return(avar)
+}
+
+
+### ivInference help functions:
+##IQ estimator: 
+.hatiq = function(rdata,IQestimator)
+{
+  switch(IQestimator,
+         RQuart = rQuar(rdata),
+         QP     = rQPVar(rdata),
+         TP     = rTPVar(rdata),
+         minRQ  = minRQ(rdata),
+         medRQ  = medRQ(rdata))
+}
+
+
+##Standard error of IVestimator: 
+.IV=function(IVestimator,iq)
+{
+  switch(IVestimator,
+         RV= sqrt(2*iq),
+         BV= sqrt(2.61*iq),
+         TV= sqrt(3.06*iq),
+         minRV= sqrt(3.81*iq),
+         medRV= sqrt(2.96*iq))
+}
+
+
+### AJjumptest help functions:
+## scale
+.scale = function(align.by){
+  switch(align.by,
+         "seconds"= as.numeric(1),
+         "minutes"= as.numeric(60),
+         "hours"= as.numeric(3600))
+}
+
+## mupk
+.fmupk = function(p,k){
+  mupk = NULL;
+  if(p==2){
+    mupk = switch(as.character(k),
+                  "2" = 4.00,
+                  "3" = 5.00,
+                  "4" = 6.00)
+  }
+  if(p==3){
+    mupk = switch(as.character(k),
+                  "2" = 24.07,
+                  "3" = 33.63,
+                  "4" = 43.74)
+  }
+  if(p==4){
+    mupk = switch(as.character(k),
+                  "2" = 204.04,
+                  "3" = 320.26,
+                  "4" = 455.67)
+  }
+  if(is.null(mupk)){
+    # reduce simulation error by taking large T and large nrep
+    nrep = 100;
+    vmupk = rep(NA,times= nrep)
+    # TODO GIANG CHECK THIS BUG
+    for( i in 1:nrep){
+      print(i)
+      vmupk[i] = .fmupk(p,k)  #TODO: check, is this recursive call correct??
+    }
+    mupk = round(mean(vmupk),2)    
+  }
+  return(mupk)
+}
+
+.Npk = function(p,k){
+  mup= 2^(p/2)*gamma(1/2*(p+1))/gamma(1/2)
+  mu2p= 2^((2*p)/2)*gamma(1/2*((2*p)+1))/gamma(1/2)      
+  npk= (1/mup^2)*(k^(p-2)*(1+k))*mu2p + k^(p-2)*(k-1)*mup^2-2*k^(p/2-1)*.fmupk(p,k)
+  return(npk)
+}
+
+.V = function(rse,p,k,N){
+  mup = 2^(p/2)*gamma(1/2*(p+1))/gamma(1/2)
+  muhalfp = 2^(p/4)*gamma(1/2*(p/2+1))/gamma(1/2)
+  A2p = (1/N)^(1-p/2)/mup*sum(rse^p)
+  Ap = (1/N)^(1-p/4)/muhalfp*sum(rse^(p/2))   ##check formula  
+  
+  V = .Npk(p,k) *A2p/(N*Ap) ##check formula: A(p), A(2p)
+  return(V)
+} 
+
+## BNSJumptest help functions:
+#  TODO THIS FUNCTION IS NOT USED??
+.gaus.ker= function(y)
+{
+  ky=(1/sqrt(2*pi)*exp(-y^2/2))
+}
+
+## zgamma function: 
+.zgamma = function(x,y){
+  if(x^2<y)
+  {
+    out = abs(x)
+  }
+  else(out=1.094*sqrt(y))
+  return(out)
+}
+
+##corrected threshold bipower variation: 
+.ctBV = function(rdata,hatV,N){
+  q = as.numeric(rdata)
+  
+  v  = 3^2*hatV
+  z1 =  .zgamma(rdata[2:N],v)  ##check formula TODO
+  z2 =  .zgamma(rdata[1:(N-1),v]) ##check formula TODO 
+  
+  ctbv= (pi/2)*sum(z1*z2)
+  
+  return(ctbv)
+}
+
+## hatIV
+.hativ = function( rdata, IVestimator,...)
+{
+  switch(IVestimator,
+         RV     = highfrequency:::RV(rdata),
+         BV     = highfrequency:::RBPVar(rdata),
+         TV     = rTPVar(rdata),         
+         minRV  = minRV(rdata),
+         medRV  = medRV(rdata),
+         ROWvar = rOWCov(rdata,...),
+         CTBV   = .ctBV(rdata, hatV, N,...))
+}
+
+
+.tt = function(IVestimator,...)
+{
+  switch(IVestimator,
+         BV= 2.61,
+         minRV= 3.81,
+         medRV= 2.96,
+         ROWVar = thetaROWVar(alpha, alphaMCD))
 }
