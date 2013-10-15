@@ -21,7 +21,7 @@ in which
 }
 
 \usage{
-rBeta= function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", 
+rBeta(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", 
                 makeReturns= FALSE,...)
 }
 
