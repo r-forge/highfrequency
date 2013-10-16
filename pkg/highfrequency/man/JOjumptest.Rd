@@ -78,7 +78,7 @@ Giang Nguyen, Jonathan Cornelissen and Kris Boudt
 
 \examples{
 data(sample_5minprices_jumps)
-JOjumptest(sample_5minprices_jumps[,1], power= 6)
+JOjumptest(as.numeric(sample_5minprices_jumps[,1]), power= 6)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
