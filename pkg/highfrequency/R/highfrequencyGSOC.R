@@ -1336,7 +1336,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
            lls = as.double( rep(0, TT) ),
            llRM = as.double( rep(0,K ) ),
            ll = as.double(0),
-           PACKAGE="highfrequencyGSOC");
+           PACKAGE="highfrequency");
   
   return((-1)*out$ll)
 } 
@@ -1368,7 +1368,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
            lls = as.double( rep(0, TT) ),
            llRM = as.double( rep(0,K ) ),
            ll = as.double(0),
-           PACKAGE="highfrequencyGSOC");
+           PACKAGE="highfrequency");
   
   return(out$ll)
 } 
@@ -1401,7 +1401,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
            lls = as.double( rep(0, TT) ),
            llRM = as.double( rep(0,K ) ),
            ll = as.double(0),
-           PACKAGE="highfrequencyGSOC");
+           PACKAGE="highfrequency");
   
   return((-1)*out$lls)
 } 
@@ -1648,7 +1648,7 @@ heavyModelC = function (data, p = matrix(c(0, 0, 1, 1), ncol = 2), q = matrix(c(
           lls = as.double( rep(0, TT) ),
           llRM = as.double( rep(0,K ) ),
           ll = as.double(0),
-          PACKAGE="highfrequencyGSOC");
+          PACKAGE="highfrequency");
   
   if (!is.null(rownames(data))) {
     xx$condvar = xts(t(matrix(xx$h,K)), order.by = as.POSIXct(rownames(data)))
