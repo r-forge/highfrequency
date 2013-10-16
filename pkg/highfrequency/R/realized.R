@@ -497,7 +497,7 @@ q = NULL,...){                 # Deprectated
 rKernel <- function(x,type=0)
 {
     type <- .kernel.chartoint(type)
-    .C("justKernel", x=as.double(x),type= as.integer(type), ans=as.double(0),PACKAGE="realized")$ans
+    .C("justKernel", x=as.double(x),type= as.integer(type), ans=as.double(0),PACKAGE="highfrequency")$ans
 }
 
 .kernel.chartoint <- function(type)
@@ -4052,14 +4052,14 @@ transformparams = function( p, q, paramsvector ){
   
   for(i in 1:pmax){    # A will contain a list-item per innovation lag
     end =          start + sum(p>=i) - 1; # How many non-zero params in this loop?
-    A[[i]] =       matrix(rep(0,K^2),ncol=2); 
+    A[[i]] =       matrix(rep(0,K^2),ncol=K); 
     A[[i]][p>=i] = paramsvector[start:end];
     start  = end + 1;   
   }#end loop over number of lags for innovations
   
   for(i in 1:qmax){   # B will contain a list-item per cond var lag
     end   = start + sum(q>=i) -1; # How many non-zero params in this loop?
-    B[[i]] = matrix(rep(0,K^2),ncol=2); 
+    B[[i]] = matrix(rep(0,K^2),ncol=K); 
     B[[i]][q >= i] = paramsvector[start:end];
     start  = end + 1;   
   }#End loop over number of lags for cond variances
@@ -4107,7 +4107,7 @@ heavy_likelihood = function( par, data, p, q, backcast, LB, UB, foroptim=TRUE, c
       }
     } #end loop over innovation lags
     
-    for(j in 1:maxp){# Loop over cond variances lags
+    for(j in 1:maxq){# Loop over cond variances lags
       if( (t-j) > 0 ){ 
         h[,t] = h[,t] + t( B[[j]] %*% t(t(h[,(t-j)])) ); #Adding cond vars to h 
       }else{ 
