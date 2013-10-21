@@ -8,7 +8,7 @@ minRQ = function(rdata,align.by=NULL,align.period = NULL, makeReturns = FALSE,..
   {
     rdata = data
   }
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   if (multixts) 
   {
     result = apply.daily(rdata, minRQ, align.by, align.period, makeReturns)
@@ -17,7 +17,7 @@ minRQ = function(rdata,align.by=NULL,align.period = NULL, makeReturns = FALSE,..
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
     }
     if(makeReturns)
     {
@@ -41,7 +41,7 @@ medRQ = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   {
     rdata = data
   }
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   if (multixts) 
   {
     result = apply.daily(rdata, medRQ, align.by, align.period, makeReturns) 
@@ -50,7 +50,7 @@ medRQ = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
     }
     if(makeReturns)
     {
@@ -72,7 +72,7 @@ rQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   {
     rdata = data
   }
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   if (multixts) 
   {
     result = apply.daily(rdata, rQuar, align.by, align.period,
@@ -82,7 +82,7 @@ rQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -104,7 +104,7 @@ rQPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
   {
     rdata = data
   }
-  multixts =highfrequency::: .multixts(rdata)
+  multixts = .multixts(rdata)
   if (multixts) 
   {
     result = apply.daily(rdata, rQPVar, align.by, align.period,  ##check FUN
@@ -114,7 +114,7 @@ rQPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata =highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata =.aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -137,7 +137,7 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
   {
     rdata = data
   }
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   if (multixts) 
   {
     result = apply.daily(rdata, rTPVar, align.by, align.period,
@@ -147,7 +147,7 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -175,7 +175,7 @@ ivInference = function(rdata, IVestimator = "RV", IQestimator = "rQuar", confide
 {
   if (hasArg(data)){ rdata = data  }
   
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   if (multixts) 
   {
     result = apply.daily(rdata, ivInference, align.by, align.period,
@@ -184,7 +184,7 @@ ivInference = function(rdata, IVestimator = "RV", IQestimator = "rQuar", confide
   }
   else{
     if((!is.null(align.by)) && (!is.null(align.period))){
-      rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
     }
     
     if(makeReturns){  rdata=makeReturns(rdata)  }
@@ -226,7 +226,7 @@ BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linea
 {
   if (hasArg(data)){  rdata = data  }
   
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   
   if (multixts)
   {
@@ -235,7 +235,7 @@ BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linea
     
   }else{
     if((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata = highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
     }
     
     if(makeReturns){  rdata = makeReturns(rdata) }
@@ -243,7 +243,7 @@ BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linea
     N=length(rdata)
     
     ## hatQV
-    hatQV = highfrequency:::RV(rdata)
+    hatQV = RV(rdata)
     
     ## hatIV        
     hatIV = .hativ( rdata, IVestimator, N=N, ... )
@@ -260,13 +260,13 @@ BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linea
       ##logtransform
       if(logtransform)
       {
-        hatQV = log(highfrequency:::RV(rdata))
+        hatQV = log(RV(rdata))
         hatIV = log(.hativ(rdata,IVestimator, N, ...))
       }
       
       if(!logtransform)
       {
-        hatQV = highfrequency:::RV(rdata)
+        hatQV = RV(rdata)
         hatIV = .hativ(rdata,IVestimator, N, ...)
       }
       
@@ -301,7 +301,7 @@ BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linea
       {
         product = .hatiq(rdata,IQestimator)/.hativ(rdata,IVestimator, N, ...)^2
       }
-      a = sqrt(N)*(1-.hativ(rdata,IVestimator,  N, ...)/highfrequency:::RV(rdata))/sqrt((theta-2)*product)
+      a = sqrt(N)*(1-.hativ(rdata,IVestimator,  N, ...)/RV(rdata))/sqrt((theta-2)*product)
       out                = {}
       out$ztest          = a
       out$critical.value = qnorm(c(0.025,0.975))
@@ -319,8 +319,8 @@ JOjumptest= function(pdata, power=4,...)
   R  = .simre(pdata) 
   r  = makeReturns(pdata)  
   N  = length(pdata)-1
-  bv = highfrequency:::RBPVar(r)
-  rv = highfrequency:::RV(r)
+  bv = RBPVar(r)
+  rv = RV(r)
   
   SwV = 2*sum(R-r)
   mu1 = 2^(6/2)*gamma(1/2*(6+1))/gamma(1/2)
@@ -362,14 +362,14 @@ AJjumptest = function(pdata, p=4 , k=2, align.by= NULL, align.period = NULL, mak
 {
   if (hasArg(data)) {  pdata = data  }
   
-  multixts = highfrequency:::.multixts(pdata)
+  multixts = .multixts(pdata)
   
   if (multixts) 
   {
     result = apply.daily(pdata, AJjumptest, align.by, align.period, makeReturns)
     return(result)
   }else{
-    pdata = highfrequency:::.aggregatets(pdata, on = "seconds", k = 1)
+    pdata = .aggregatets(pdata, on = "seconds", k = 1)
   }
   
   N = length(pdata)-1;
@@ -423,7 +423,7 @@ rSV= function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,.
     rdata = data
   }
   
-  multixts = highfrequency::: .multixts(rdata)
+  multixts =  .multixts(rdata)
   
   if (multixts) 
   {
@@ -435,7 +435,7 @@ rSV= function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,.
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata =highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata =.aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -468,7 +468,7 @@ rSkew = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
     rdata = data
   }
   
-  multixts =highfrequency::: .multixts(rdata)
+  multixts = .multixts(rdata)
   
   if (multixts) 
   {
@@ -480,7 +480,7 @@ rSkew = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata =highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata =.aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -490,7 +490,7 @@ rSkew = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
     q=as.numeric(rdata)
     N= length(q)
     
-    rv= highfrequency:::RV(rdata)
+    rv= RV(rdata)
     
     rSkew= sqrt(N)*sum(q^3)/rv^(3/2)
     
@@ -509,7 +509,7 @@ rKurt = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
     rdata = data
   }
   
-  multixts =highfrequency::: .multixts(rdata)
+  multixts = .multixts(rdata)
   
   if (multixts) 
   {
@@ -521,7 +521,7 @@ rKurt = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata =highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata =.aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -531,7 +531,7 @@ rKurt = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
     q=as.numeric(rdata)
     N= length(q)
     
-    rv= highfrequency:::RV(rdata)
+    rv= RV(rdata)
     
     rkurt= N*sum(q^4)/rv^(2)
     
@@ -549,7 +549,7 @@ rMPV = function(rdata, m= 2, p=2, align.by= NULL, align.period= NULL, makeReturn
     rdata = data
   }
   
-  multixts =highfrequency::: .multixts(rdata)
+  multixts = .multixts(rdata)
   
   if (multixts) 
   {
@@ -560,7 +560,7 @@ rMPV = function(rdata, m= 2, p=2, align.by= NULL, align.period= NULL, makeReturn
   if (!multixts) 
   {
     if ((!is.null(align.by)) && (!is.null(align.period))) {
-      rdata =highfrequency:::.aggregatets(rdata, on = align.by, k = align.period)
+      rdata =.aggregatets(rdata, on = align.by, k = align.period)
     }
     if (makeReturns) 
     {
@@ -597,13 +597,13 @@ MRC= function(pdata, pairwise = FALSE , makePsd= FALSE,...)
     n = length(pdata)
   }
   if (n == 1) {
-    multixts = highfrequency:::.multixts(pdata); 
+    multixts = .multixts(pdata); 
     if(multixts){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input"); }
     mrc = .crv(pdata)
   }  
   
   if (n > 1) {
-    multixts = highfrequency:::.multixts(pdata[[1]]); 
+    multixts = .multixts(pdata[[1]]); 
     if(multixts){ stop("This function does not support having an xts object of multiple days as input. Please provide a timeseries of one day as input"); }
     
     if(pairwise){
@@ -675,7 +675,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
     rindex= makeReturns(rindex)
   }
   
-  multixts = highfrequency:::.multixts(rdata)
+  multixts = .multixts(rdata)
   
   if (multixts) 
   {
@@ -716,8 +716,8 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
     {
       
       switch(RVestimator,
-             RV= highfrequency:::RV(rindex),
-             BV= highfrequency:::RBPVar(rindex),
+             RV= RV(rindex),
+             BV= RBPVar(rindex),
              minRV= minRV(rindex ),
              medRV= medRV(rindex ),
              rCov= rCov(rindex ) ,
@@ -949,8 +949,8 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
 .hativ = function( rdata, IVestimator, startV = NULL, N,...)
 {
   switch(IVestimator,
-         RV     = highfrequency:::RV(rdata),
-         BV     = highfrequency:::RBPVar(rdata),
+         RV     = RV(rdata),
+         BV     = RBPVar(rdata),
          TV     = rTPVar(rdata),         
          minRV  = minRV(rdata),
          medRV  = medRV(rdata),
@@ -1005,6 +1005,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
   x[(2:l), ] = x[(2:l), ]/x[(1:(l - 1)), ]-1
   x[1, ] = rep(0, dim(pdata)[2])
   x = xts(x, order.by = index(pdata))
+  return(x)
 }
 
 

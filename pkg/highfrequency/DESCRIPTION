@@ -9,7 +9,7 @@ Description: The highfrequency package contains an extensive toolkit for the use
 License: GPL (>= 2)
 Depends: R (>= 2.12.0), xts, zoo
 Suggests: robustbase, cubature, mvtnorm, chron, timeDate,
-        quantmod, MASS, sandwich, numderiv
+        quantmod, MASS, sandwich, numDeriv
 Contributors: Giang Nugyen
 Thanks: A special thanks for additional contributions from Chris Blakely
 LazyLoad: yes
