@@ -316,19 +316,19 @@ BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linea
 
 JOjumptest= function(pdata, power=4,...)
 {
-  R  = .simre(pdata) 
-  r  = makeReturns(pdata)  
+  R  = as.zoo(.simre(pdata));
+  r  = as.zoo(makeReturns(pdata));
   N  = length(pdata)-1
   bv = RBPVar(r)
   rv = RV(r)
   
-  SwV = 2*sum(R-r)
+  SwV = 2*sum(R-r,na.rm = TRUE)
   mu1 = 2^(6/2)*gamma(1/2*(6+1))/gamma(1/2)
   
   ##mupower:
   if(power==4)
   {
-    q      = abs(rollapply(r, width = 4, FUN = prod, align = "left"))
+    q      = abs(rollapply(r, width = 4, FUN = prod, align = "left",na.rm = TRUE))
     mu2    = 2^((6/4)/2)*gamma(1/2*(6/4+1))/gamma(1/2)
     av     = mu1/9 * N^3*(mu2)^(-4)/(N-4-1)*sum(q^(6/4),na.rm= TRUE)   ##check formula
     JOtest = N*bv/sqrt(av)*(1- rv/SwV)
@@ -342,7 +342,7 @@ JOjumptest= function(pdata, power=4,...)
   
   if(power==6)
   {
-    q=abs(rollapply(r, width = 6, FUN = prod, align = "left"))
+    q=abs(rollapply(r, width = 6, FUN = prod, align = "left",na.rm = TRUE))
     mu2= 2^((6/6)/2)*gamma(1/2*(6/6+1))/gamma(1/2)
     av=mu1/9 * N^3*(mu2)^(-6)/(N-6-1)*sum(q^(6/6),na.rm= TRUE)   ##check formula
     JOtest= N*bv/sqrt(av)*(1- rv/SwV)
@@ -1013,7 +1013,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
 ##Preaverage return: 
 .hatreturn= function(pdata,kn)
 {
-  rdata=makeReturns(pdata)
+  rdata= as.zoo(makeReturns(pdata));
   kn=as.numeric(kn)
   if(kn == 1){ hatre = rdata}
   else{
