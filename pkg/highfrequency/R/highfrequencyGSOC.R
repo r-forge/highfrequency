@@ -662,17 +662,30 @@ MRC= function(pdata, pairwise = FALSE , makePsd= FALSE,...)
 
 ####Realized beta####
 
-rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeReturns= FALSE,...)
+rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= NULL, makeReturns= FALSE,...)
 {
   if (hasArg(data)) 
   {
     rdata = data
   }
   
-  if (makeReturns) 
+  if(RCOVestimator!="rRTSCov" & RCOVestimator!="rTSCov" &  makeReturns  ){
+    rdata = makeReturns(rdata);
+    rindex= makeReturns(rindex);  
+  }
+  
+  if(!makeReturns)
   {
-    rdata = makeReturns(rdata)
-    rindex= makeReturns(rindex)
+    if(RCOVestimator=="rRTSCov" || RCOVestimator=="rTSCov"){
+      if( min(rdata) <0 ){
+        print("when using rRTSCov, rTSCov, introduce price data - transformation to price data done")
+        rdata = exp(cumsum(rdata))
+      }
+      if( min(rindex) <0 ){
+        print("when using rRTSCov, rTSCov, introduce price data - transformation to price data done")
+        rindex = exp(cumsum(rindex))
+      }       
+    }
   }
   
   multixts = .multixts(rdata)
@@ -683,58 +696,53 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
   }
   if (!multixts) 
   {
-    if(RCOVestimator=="rRTSCov" | RCOVestimator=="rTSCov"){
-      if( min(rdata) <0 ){
-        print("when using rRTSCov, rTSCov, introduce price data - transformation to price data done")
-        rdata = exp(cumsum(rdata))
-      }
-      if( min(rindex) <0 ){
-        print("when using rRTSCov, rTSCov, introduce price data - transformation to price data done")
-        rindex = exp(cumsum(rindex))
-      }       
-    }
+    
     rcovfun= function(rdata, rindex, RCOVestimator)
     {
       switch(RCOVestimator,
-             rCov= rCov(cbind(rdata,rindex) )[1,2],
-             rAVGCov= rAVGCov(list(rdata, rindex) )[1,2],
-             rBPCov= rBPCov(cbind(rdata, rindex) )[1,2],
-             rHYCov= rHYCov(list(rdata, rindex) )[1,2],
-             rKernelCov= rKernelCov(list(rdata, rindex) )[1,2],
-             rOWCov= rOWCov(cbind(rdata, rindex) )[1,2],
-             rRTSCov= rRTSCov(list(rdata, rindex))[1,2],
-             rThresholdCov= rThresholdCov(cbind(rdata, rindex) )[1,2],
-             rTSCov= rTSCov(list(rdata, rindex))[1,2]
+             rCov= rCov(cbind(rdata,rindex) ),
+             rAVGCov= rAVGCov(list(rdata, rindex) ),
+             rBPCov= rBPCov(cbind(rdata, rindex) ),
+             rHYCov= rHYCov(list(rdata, rindex) ),
+             rKernelCov= rKernelCov(list(rdata, rindex) ),
+             rOWCov= rOWCov(cbind(rdata, rindex) ),
+             rRTSCov= rRTSCov(list(rdata, rindex)),
+             rThresholdCov= rThresholdCov(cbind(rdata, rindex) ),
+             rTSCov= rTSCov(list(rdata, rindex))
       )
       
     }
-    rcov= rcovfun(rdata,rindex,RCOVestimator)
+    rcov= rcovfun(rdata,rindex,RCOVestimator);
     
-    if( is.null(RVestimator) ){ RVestimator = RCOVestimator }  
-    
-    rvfun= function(rindex, RVestimator)
+    if(RVestimator == RCOVestimator || is.null(RVestimator))
     {
+      rbeta = rcov[1,2]/rcov[2,2];
+    }else{
+      rvfun= function(rindex, RVestimator)
+      {
+        
+        switch(RVestimator,
+               RV= RV(rindex),
+               BV= RBPVar(rindex),
+               minRV= minRV(rindex ),
+               medRV= medRV(rindex ),
+               rCov= rCov(rindex ) ,
+               rAVGCov= rAVGCov(rindex ) ,
+               rBPCov= rBPCov(rindex ) ,
+               rHYCov= rHYCov(rindex ) ,
+               rKernelCov= rKernelCov(rindex ) ,
+               rOWCov= rOWCov(rindex ) ,
+               rRTSCov= rRTSCov(rindex) ,
+               rThresholdCov= rThresholdCov(rindex ) ,
+               rTSCov= rTSCov(rindex)
+        )             
+        
+      }
+      rv=rvfun(rindex,RVestimator)
       
-      switch(RVestimator,
-             RV= RV(rindex),
-             BV= RBPVar(rindex),
-             minRV= minRV(rindex ),
-             medRV= medRV(rindex ),
-             rCov= rCov(rindex ) ,
-             rAVGCov= rAVGCov(rindex ) ,
-             rBPCov= rBPCov(rindex ) ,
-             rHYCov= rHYCov(rindex ) ,
-             rKernelCov= rKernelCov(rindex ) ,
-             rOWCov= rOWCov(rindex ) ,
-             rRTSCov= rRTSCov(rindex) ,
-             rThresholdCov= rThresholdCov(rindex ) ,
-             rTSCov= rTSCov(rindex)
-      )             
-      
+      rbeta = rcov[1,2]/rv
     }
-    rv=rvfun(rindex,RVestimator)
     
-    rbeta = rcov/rv
     return(rbeta)
   }
 }
