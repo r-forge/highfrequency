@@ -1,11 +1,6 @@
 useDynLib(highfrequency); 
 import(zoo); 
 import(xts);
-import(FKF);
-import(rugarch);
-import(timeDate);
-importFrom(BMS,quantile.density);
-importFrom(robustbase,scaleTau2);
 export(
 minRV,
 medRV,
@@ -71,10 +66,11 @@ rQuar,
 rSkew,
 rSV,
 rTPVar,
-heavyModelC
+heavyModelC,
+spotvol
 )#end exported function
 
 S3method(print, harModel);
 S3method(summary, harModel);
 S3method(plot, harModel);
-S3method(plot,spotvol)
+S3method(plot, spotvol)
