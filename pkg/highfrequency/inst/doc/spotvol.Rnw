@@ -1,5 +1,0 @@
-%\VignetteIndexEntry{spotvol function manual}
-
-\documentclass{article}  
-\begin{document}  
-\end{document}  
