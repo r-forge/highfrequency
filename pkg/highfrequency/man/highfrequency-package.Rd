@@ -11,8 +11,8 @@ The highfrequency package contains an extensive toolkit for the use of highfrequ
 \tabular{ll}{
 Package: \tab highfrequency\cr
 Type: \tab Package\cr
-Version: \tab 0.1\cr
-Date: \tab 2012-06-01\cr
+Version: \tab 0.3\cr
+Date: \tab 2014-08-31\cr
 License: \tab \cr
 }
 }
@@ -21,6 +21,10 @@ License: \tab \cr
 Jonathan Cornelissen, Kris Boudt, Scott Payseur
 
 Maintainer: Jonathan Cornelissen <Jonathan.cornelissen@econ.kuleuven.be>
+
+Contributors: Giang Nguyen, Maarten Schermers.
+
+Thanks: A special thanks for additional contributions from Chris Blakely.
 }
 
 \keyword{ package }
