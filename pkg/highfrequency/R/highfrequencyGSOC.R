@@ -662,7 +662,7 @@ MRC= function(pdata, pairwise = FALSE , makePsd= FALSE,...)
 
 ####Realized beta####
 
-rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= NULL, makeReturns= FALSE,...)
+rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeReturns= FALSE,...)
 {
   if (hasArg(data)) 
   {
