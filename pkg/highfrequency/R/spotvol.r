@@ -1170,7 +1170,7 @@ diurnal =
 #            xlab = "intraday period", type = "l", lty = 3)
 #       legend("topright", c("Parametric", "Non-parametric"), cex = 1.1,
 #              lty = c(1,3), lwd = 1, bty = "n")
-        seas = highfrequency:::diurnalfit(theta = theta, P1 = P1, P2 = P2, intraT = intraT, 
+        seas = diurnalfit(theta = theta, P1 = P1, P2 = P2, intraT = intraT, 
                                          dummies = dummies)
 #       lines(seas, lty = 1)
       return(list(seas, theta))
