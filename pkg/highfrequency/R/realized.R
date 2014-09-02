@@ -966,7 +966,7 @@ makePsd = function(S,method="covariance"){
         secs = 3600 * k;
         tby = paste(3600 * k, "sec", sep = " ");
     } 
-    g = base:::seq(start(ts), end(ts), by = tby);
+    g = base::seq(start(ts), end(ts), by = tby);
     rawg = as.numeric(as.POSIXct(g, tz = "GMT"));
     newg = rawg + (secs - rawg%%secs);
     g    = as.POSIXct(newg, origin = "1970-01-01",tz = "GMT");
@@ -2078,7 +2078,7 @@ convert_trades = function (datasource, datadestination, ticker, extension = "txt
   for (i in 1:length(ticker)) {
     tfile_name = paste(datasource, "/", ticker[i], "_trades", 
                        sep = "")
-    tdata = try(highfrequency:::readdata(path = tfile_name, extension = extension, 
+    tdata = try(readdata(path = tfile_name, extension = extension, 
                                 header = header, dims = 9), silent = TRUE)
     
     error = dim(tdata)[1] == 0
@@ -2259,7 +2259,7 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
   if( onefile == TRUE ){
     # Load the data: ############################ This depends on the data provider
     if(trades == TRUE){ 
-      if( extension=="txt"){ dataname = paste(datasource,"/",ticker,"_trades",sep=""); highfrequency:::readdata(path = datasource, extension = "txt", header = FALSE, dims = 0); } 
+      if( extension=="txt"){ dataname = paste(datasource,"/",ticker,"_trades",sep=""); readdata(path = datasource, extension = "txt", header = FALSE, dims = 0); } 
       if( extension=="csv"){ dataname = paste(datasource,"/",ticker,"_trades.csv",sep=""); data = read.csv(dataname);}
       if( extension=="tickdatacom"){ 
         dataname   = paste(datasource,"/",ticker,"_trades.asc",sep="");
@@ -2272,7 +2272,7 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
       alldata = suppressWarnings(makeXtsTrades(tdata=data,format=format)); 
     }
     if (quotes == TRUE){ 
-      if( extension=="txt"){ dataname = paste(datasource,"/",ticker,"_quotes",sep=""); highfrequency:::readdata(path = datasource, extension = "txt", header = FALSE, dims = 0); } 
+      if( extension=="txt"){ dataname = paste(datasource,"/",ticker,"_quotes",sep=""); readdata(path = datasource, extension = "txt", header = FALSE, dims = 0); } 
       if( extension=="csv"){ dataname = paste(datasource,"/",ticker,"_quotes.csv",sep=""); data = read.csv(dataname);}
       if( extension=="tickdatacom"){ 
         dataname   = paste(datasource,"/",ticker,"_quotes.asc",sep=""); 
@@ -3772,7 +3772,7 @@ aggregatets = function (ts, FUN = "previoustick", on = "minutes", k = 1, weights
           tby = "h"
         }
         by = paste(k, tby, sep = " ")
-        allindex = as.POSIXct(base:::seq(start(ts3), end(ts3), 
+        allindex = as.POSIXct(base::seq(start(ts3), end(ts3), 
                                          by = by))
         xx = xts(rep("1", length(allindex)), order.by = allindex)
         ts3 = merge(ts3, xx)[, (1:dim(ts)[2])]
@@ -3790,7 +3790,7 @@ aggregatets = function (ts, FUN = "previoustick", on = "minutes", k = 1, weights
     
     FUN = match.fun(FUN);
     
-    g = base:::seq(start(ts), end(ts), by = tby);
+    g = base::seq(start(ts), end(ts), by = tby);
     rawg = as.numeric(as.POSIXct(g,tz="GMT"));
     newg = rawg + (secs - rawg%%secs);
     g    = as.POSIXct(newg,origin="1970-01-01",tz="GMT");
