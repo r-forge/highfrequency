@@ -520,7 +520,7 @@ while( condition >= 1 ){
     double O[K];
     double A[K*K*pMax];
     double B[K*K*qMax];
-    double temp[K]; 
+   // double temp[K]; 
     
     //---- initialize -----------------
       for(i=0;i<K;i++)
@@ -672,7 +672,7 @@ while( condition >= 1 ){
   void heavy_parameter_transformR(double *parameters, int K, int *p, int *q, double *O, double *A, double *B, int *pMax1, int *qMax1)
 {
     
-    int i,j,k,m,n;
+    int i,j,k;
     
     for(k=0;k<K;k++) {O[k] = parameters[k];} //O(:) = parameters(1:K);
     
