@@ -26,13 +26,17 @@ in which, \eqn{IVestimator} can be: bipower variance (BV), minRV, medRV.
 (Huang and Tauchen (2005))
 }
 \usage{
-BNSjumptest(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear", logtransform= FALSE, 
-            max= FALSE, align.by= NULL, align.period= NULL, makeReturns = FALSE, ...)
+BNSjumptest(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear", 
+            logtransform= FALSE, max= FALSE, align.by= NULL, align.period= NULL, 
+            makeReturns = FALSE, ...)
 }
 
 \arguments{
   \item{rdata}{a zoo/xts object containing all returns in period t for one asset.}
-  \item{IVestimator}{can be chosen among jump robust integrated variance estimators: BV, minRV, medRV and corrected threshold bipower variation (CTBV). If CTBV is chosen, an argument of \eqn{startV}, start point of auxiliary estimators in threshold estimation (Corsi et al. (2010) can be included. BV by default.}
+  \item{IVestimator}{can be chosen among jump robust integrated variance estimators: BV, minRV, medRV 
+  and corrected threshold bipower variation (CTBV). 
+   If CTBV is chosen, an argument of \eqn{startV}, start point of auxiliary estimators in threshold estimation 
+   (Corsi et al. (2010)) can be included. BV by default.}
   \item{IQestimator}{can be chosen among jump robust integrated quarticity estimators: TP, QP, minRQ and medRQ. TP by default.}
   \item{type}{a method of BNS testing: can be linear or ratio. Linear by default.}
   \item{logtransform}{boolean, should be TRUE when QVestimator and IVestimator are in logarith form. FALSE by default.}
