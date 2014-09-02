@@ -11,7 +11,7 @@ The highfrequency package contains an extensive toolkit for the use of highfrequ
 \tabular{ll}{
 Package: \tab highfrequency\cr
 Type: \tab Package\cr
-Version: \tab 0.3\cr
+Version: \tab 0.4\cr
 Date: \tab 2014-08-31\cr
 License: \tab \cr
 }
