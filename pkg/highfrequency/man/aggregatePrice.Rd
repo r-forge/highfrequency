@@ -12,7 +12,7 @@ of the result.
 
 \usage{
 aggregatePrice(ts,FUN = previoustick,on="minutes",k=1,
-                 marketopen = "09:30:00", marketclose = "16:00:00", tz = "GMT"))
+                 marketopen = "09:30:00", marketclose = "16:00:00", tz = "GMT")
 }
 
 \arguments{
