@@ -13,7 +13,7 @@ Package: \tab highfrequency\cr
 Type: \tab Package\cr
 Version: \tab 0.4\cr
 Date: \tab 2014-08-31\cr
-License: \tab \cr
+License: \tab GPL (>= 2) \cr
 }
 }
 
