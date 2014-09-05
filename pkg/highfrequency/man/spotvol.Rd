@@ -167,7 +167,7 @@ be stochastic. The spot volatility estimation is split into four components:
 a random walk, an autoregressive process, a stochastic cyclical process and
 a deterministic cyclical process. The model is estimated using a
 quasi-maximum likelihood method based on the Kalman Filter. The package
-\code{\FKF} is used to apply the Kalman filter. In addition to
+\code{FKF} is used to apply the Kalman filter. In addition to
 the spot volatility estimates, all parameter estimates are returned.
 
 \strong{Nonparametric filtering (\code{"kernel"})}
@@ -267,7 +267,7 @@ visualized.
 Parameters:
 \tabular{ll}{
 \code{model} \tab String specifying the type of test to be used. Options
-include \code{"sGARCH", "eGARCH"}. See \code{\ugarchspec} in the
+include \code{"sGARCH", "eGARCH"}. See \code{ugarchspec} in the
 \code{rugarch} package. Default = \code{"eGARCH"}. \cr
 \code{garchorder} \tab Numeric value of length 2, containing the order of
 the GARCH model to be estimated. Default = \code{c(1,1)}. \cr
