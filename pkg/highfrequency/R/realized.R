@@ -3096,72 +3096,121 @@ p_return_abs <- function (data)
  matchtq = function(...){matchTradesQuotes(...)};                          
 
 ##################### Total cleanup functions formerly in RTAQ ################################
+
+
 tradesCleanup = function(from,to,datasource,datadestination,ticker,exchanges,tdataraw=NULL,report=TRUE,selection="median",...){
   
-  nresult = rep(0,5);
-  if(is.null(tdataraw)){
-    dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
-    dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
-    
-    for(j in 1:length(dates)){
-      datasourcex = paste(datasource,"/",dates[j],sep="");
-      datadestinationx = paste(datadestination,"/",dates[j],sep="");
-      
-      for(i in 1:length(ticker)){
-        dataname = paste(ticker[i],"_trades.RData",sep="");
-        load(paste(datasourcex,"/",dataname,sep=""));
-        
-        if(class(tdata)[1]!="try-error"){
-          exchange = exchanges[i];  
+  nresult = rep(0, 5)
+  if(!is.list(exchanges)){ exchanges = as.list(exchanges)}
+  if (is.null(tdataraw)) {
+    dates = timeSequence(from, to, format = "%Y-%m-d")
+    dates = dates[isBizday(dates, holidays=holidayNYSE(1960:2040))]
+    for (j in 1:length(dates)) {
+      datasourcex = paste(datasource, "/", dates[j], sep = "")
+      datadestinationx = paste(datadestination, "/", dates[j], sep = "")
+      for (i in 1:length(ticker)) {
+        dataname = paste(ticker[i], "_trades.RData", sep = "");
+        if(file.exists(paste(datasourcex, "/", dataname, sep = ""))){
+          load(paste(datasourcex, "/", dataname, sep = ""))
+          if (class(tdata)[1] != "try-error") {            
+            exchange = exchanges[[i]]            
+            if(length(tdata$PRICE)>0){
+              tdata = .check_data(tdata);
+              nresult[1] = nresult[1] + dim(tdata)[1]
+            }else{tdata=NULL;}
+            
+            if(length(tdata$PRICE)>0){
+              tdata = try(nozeroprices(tdata))
+              nresult[2] = nresult[2] + dim(tdata)[1];
+            }else{tdata=NULL;}
+            
+            
+            if(length(tdata$PRICE)>0){
+              tdata = try(selectexchange(tdata, exch = exchange))
+              nresult[3] = nresult[3] + dim(tdata)[1]
+            }else{tdata=NULL;}
+            
+            
+            if(length(tdata$PRICE)>0){
+              tdata = try(salescond(tdata))
+              nresult[4] = nresult[4] + dim(tdata)[1]
+            }else{tdata=NULL;}
+            
+            
+            if(length(tdata$PRICE)>0){
+              tdata = try(mergeTradesSameTimestamp(tdata, selection = selection))
+              nresult[5] = nresult[5] + dim(tdata)[1];
+            }else{tdata=NULL;}
+            
+            
+            
+            save(tdata, file = paste(datadestinationx,"/", dataname, sep = ""))
+          }
+          if (class(tdata) == "try-error") {
+            abc = 1
+            save(abc, file = paste(datadestinationx, "/missing_", 
+                                   ticker[i], ".RData", sep = ""))
+          }
           
-          tdata = .check_data(tdata);  nresult[1]= nresult[1]+dim(tdata)[1];
-          
-          ##actual clean-up: 
-          ##general:
-          tdata = try(nozeroprices(tdata));  nresult[2]= nresult[2]+dim(tdata)[1];
-          tdata = try(selectexchange(tdata,exch=exchange));  nresult[3]= nresult[3]+dim(tdata)[1];
-          
-          ##trade specific:
-          tdata = try(salescond(tdata));   nresult[4] = nresult[4] + dim(tdata)[1];
-          tdata = try(mergeTradesSameTimestamp(tdata,selection=selection));   nresult[5] = nresult[5] + dim(tdata)[1];
-          
-          save(tdata, file = paste(datadestinationx,"/",dataname,sep=""));
+        }else{
+          next;
         }
-        
-        if(class(tdata)=="try-error")  {
-          abc=1;
-          save(abc, file = paste(datadestinationx,"/missing_",ticker[i],".RData",sep=""));
-        }
-      }
+      }   
     }
-    if(report==TRUE){
-      names(nresult) = c("initial number","no zero prices","select exchange",
-                         "sales condition","merge same timestamp");
+    if (report == TRUE) {
+      names(nresult) = c("initial number", "no zero prices", 
+                         "select exchange", "sales condition", "merge same timestamp")
       return(nresult)
     }
   }
-  
-  if(!is.null(tdataraw)){
-    if(class(tdataraw)[1]!="try-error"){
-      if(length(exchanges)>1){print("The argument exchanges contains more than 1 element. Please select a single exchange, in case you provide tdataraw.")}
-      tdata=tdataraw; rm(tdataraw);  
-      tdata = .check_data(tdata);  nresult[1]= nresult[1]+dim(tdata)[1];
-      
-      ##actual clean-up: 
-      ##general:
-      tdata = try(nozeroprices(tdata));  nresult[2]= nresult[2]+dim(tdata)[1];
-      tdata = try(selectexchange(tdata,exch=exchanges));  nresult[3]= nresult[3]+dim(tdata)[1];
-      
-      ##trade specific:
-      tdata = try(salescond(tdata));   nresult[4] = nresult[4] + dim(tdata)[1];
-      tdata = try(mergeTradesSameTimestamp(tdata,selection=selection));   nresult[5] = nresult[5] + dim(tdata)[1];
-      
-      if(report==TRUE){
-        names(nresult) = c("initial number","no zero prices","select exchange",
-                           "sales condition","merge same timestamp");
-        return(list(tdata=tdata,report=nresult))
+  if (!is.null(tdataraw)) {
+    if (class(tdataraw)[1] != "try-error") {
+      if (length(exchanges) > 1) {
+        print("The argument exchanges contains more than 1 element. Please select a single exchange, in case you provide tdataraw.")
       }
-      if(report!=TRUE){return(tdata)}
+      exchange = exchanges[[1]];
+      
+      tdata = tdataraw
+      rm(tdataraw)
+      
+      
+      if(length(tdata)>0){
+        tdata = .check_data(tdata);
+        nresult[1] = nresult[1] + dim(tdata)[1]
+      }else{tdata=NULL;}
+      
+      if(length(tdata)>0){
+        tdata = try(nozeroprices(tdata))
+        nresult[2] = nresult[2] + dim(tdata)[1];
+      }else{tdata=NULL;}
+      
+      
+      if(length(tdata)>0){
+        tdata = try(selectexchange(tdata, exch = exchange))
+        nresult[3] = nresult[3] + dim(tdata)[1]
+      }else{tdata=NULL;}
+      
+      
+      if(length(tdata)>0){
+        tdata = try(salescond(tdata))
+        nresult[4] = nresult[4] + dim(tdata)[1]
+      }else{tdata=NULL;}
+      
+      
+      if(length(tdata)>0){
+        tdata = try(mergeTradesSameTimestamp(tdata, selection = selection))
+        nresult[5] = nresult[5] + dim(tdata)[1];
+      }else{tdata=NULL;}
+      
+      
+      if (report == TRUE) {
+        names(nresult) = c("initial number", "no zero prices", 
+                           "select exchange", "sales condition", "merge same timestamp")
+        return(list(tdata = tdata, report = nresult))
+      }
+      if (report != TRUE) {
+        return(tdata)
+      }
     }
   }
   
@@ -3360,7 +3409,8 @@ noZeroPrices = function(tdata){
 selectExchange = function(data,exch="N"){ 
   data = .check_data(data);
   ###FUNCTION TO SELECT THE OBSERVATIONS OF A SINGLE EXCHANGE: selectexchange
-  filteredts = data[data$EX==exch];
+  #filteredts = data[data$EX==exch];
+  filteredts = data[is.element(data$EX , exch)]
   return(filteredts);
 }
 

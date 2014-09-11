@@ -18,13 +18,13 @@ License: \tab GPL (>= 2) \cr
 }
 
 \author{
-Jonathan Cornelissen, Kris Boudt, Scott Payseur
+Jonathan Cornelissen,  Kris Boudt, Scott Payseur
 
-Maintainer: Jonathan Cornelissen <Jonathan.cornelissen@econ.kuleuven.be>
+Maintainer: Kris Boudt <Kris.Boudt@econ.kuleuven.be>
 
 Contributors: Giang Nguyen, Maarten Schermers.
 
-Thanks: A special thanks for additional contributions from Chris Blakely.
+Thanks: A special thanks for additional contributions from Chris Blakely, Brian Peterson, Eric Zivot and GSoC.
 }
 
 \keyword{ package }
