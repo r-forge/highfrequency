@@ -12,7 +12,7 @@
 #' (identical for all observations within a day). Both components are then
 #' estimated separately. For more details, see Taylor and Xu (1997) and 
 #' Andersen and Bollerslev (1997). The jump robust versions by Boudt et al.
-#' (2011) have also been implemented.
+#' (2011) have also been implemented. 
 #' 
 #' @section Stochastic periodicity:
 #' This method by Beltratti and Morana (2001) assumes the periodicity factor to
@@ -381,8 +381,6 @@ spotvol <- function(data, method = "detper", ..., on = "minutes", k = 5,
                     marketopen = "09:30:00", marketclose = "16:00:00",
                     tz = "GMT")  
 {
-  require(timeDate)
-  require(chron)
   if (on == "seconds" | on == "secs") 
     delta <- k 
   if (on == "minutes" | on == "mins") 
@@ -395,8 +393,9 @@ spotvol <- function(data, method = "detper", ..., on = "minutes", k = 5,
     dates <- unique(format(time(data), "%Y-%m-%d"))
     cDays <- length(dates)
     rdata <- mR <- c()
-    intraday <- seq(from = times(marketopen), to = times(marketclose), 
-                    by = times(delta/(24*3600))) 
+    intraday <- seq(from = chron::times(marketopen), 
+                    to = chron::times(marketclose), 
+                    by = chron::times(delta/(24*3600))) 
     if (as.character(tail(intraday, 1)) != marketclose) 
       intraday <- c(intraday, marketclose)
     intraday <- intraday[2:length(intraday)]
@@ -510,7 +509,7 @@ detper <- function(mR, rdata = NULL, options = list())
 # model of Beltratti & Morana (2001)
 stochper <- function(mR, rdata = NULL, options = list()) 
 {
-  require(FKF)
+  #require(FKF)
   # default options, replace if user-specified
   op <- list(init = list(), P1 = 5, P2 = 5, control = list(trace=1, maxit=500))
   op[names(options)] <- options 
@@ -563,9 +562,9 @@ stochper <- function(mR, rdata = NULL, options = list())
   
   # recreate model to obtain volatility estimates
   ss <- ssmodel(opt$par, days, N, P1 = op$P1, P2 = op$P2)
-  kf <- fkf(a0 = ss$a0, P0 = ss$P0, dt = ss$dt, ct = ss$ct, Tt = ss$Tt, 
-            Zt = ss$Zt, HHt = ss$HHt, GGt = ss$GGt, 
-            yt = matrix(rvector, ncol = length(rvector)))
+  kf <- FKF::fkf(a0 = ss$a0, P0 = ss$P0, dt = ss$dt, ct = ss$ct, Tt = ss$Tt, 
+                 Zt = ss$Zt, HHt = ss$HHt, GGt = ss$GGt, 
+                 yt = matrix(rvector, ncol = length(rvector)))
   sigmahat <- as.vector(exp((ss$Zt%*%kf$at[,1:(N*days)] + ss$ct + 1.27)/2))
   
   # transform parameter estimates back
@@ -592,8 +591,8 @@ loglikBM <- function(par_t, yt, days, N = 288, P1 = 5, P2 = 5)
 {
   ss <- ssmodel(par_t, days, N, P1 = P1, P2 = P2)
   yt <- matrix(yt, ncol = length(yt))
-  kf <- fkf(a0 = ss$a0, P0 = ss$P0, dt = ss$dt, ct = ss$ct, Tt = ss$Tt, 
-            Zt = ss$Zt, HHt = ss$HHt, GGt = ss$GGt, yt = yt)
+  kf <- FKF::fkf(a0 = ss$a0, P0 = ss$P0, dt = ss$dt, ct = ss$ct, Tt = ss$Tt, 
+                 Zt = ss$Zt, HHt = ss$HHt, GGt = ss$GGt, yt = yt)
   return(-kf$logLik/length(yt))
 }
 
@@ -778,8 +777,6 @@ ISE <- function(h, x, delta = 300, type = "gaussian")
 # See Fried (2012)
 piecewise <- function(mR, rdata = NULL, options = list())
 {
-  require(BMS)
-  require(robustbase)
   # default options, replace if user-specified
   op <- list(type = "MDa", m = 40, n = 20, alpha = 0.005, volest = "bipower",
              online = TRUE)
@@ -806,7 +803,7 @@ piecewise <- function(mR, rdata = NULL, options = list())
                        rv = sqrt((1/(i - lastchange + 1)) * 
                                 (rCov(vR[(lastchange + 1):i]))),
                        sd = sd(vR[(lastchange + 1):i]),
-                       tau = scaleTau2(vR[(lastchange + 1):i]))
+                       tau = robustbase::scaleTau2(vR[(lastchange + 1):i]))
     } else {
       from <- cp[max(which(cp < i))]
       to <- min(c(N*D, cp[which(cp >= i)]))
@@ -816,7 +813,7 @@ piecewise <- function(mR, rdata = NULL, options = list())
                         medrv = sqrt((1/len)*(medRV(vR[from:to]))),
                         rv = sqrt((1/len)*(rCov(vR[from:to]))),
                         sd = sd(vR[from:to]),
-                        tau = scaleTau2(vR[from:to]))
+                        tau = robustbase::scaleTau2(vR[from:to]))
     }
   } 
   if (is.null(rdata)) {
@@ -870,7 +867,7 @@ DMtest <- function(x, y, alpha = 0.005)
   ycor <- y - ymed
   delta1 <- ymed - xmed
   out <- density(c(xcor, ycor), kernel = "epanechnikov")
-  fmed <- as.numeric(quantile(out, probs = 0.5))
+  fmed <- as.numeric(BMS::quantile.density(out, probs = 0.5))
   fmedvalue <- (out$y[max(which(out$x < fmed))] + 
                   out$y[max(which(out$x < fmed))+1])/2
   test <- sqrt((m*n)/(m + n))*2*fmedvalue*delta1
@@ -914,7 +911,6 @@ MDtest <- function(x, y, alpha = 0.005, type = "MDa")
 # GARCH with seasonality (external regressors)
 garch_s <- function(mR, rdata = NULL, options = list())
 {
-  require(rugarch)
   # default options, replace if user-specified
   op <- list(model = "eGARCH", order = c(1,1), dist = "norm", P1 = 5, 
              P2 = 5, solver.control = list())
@@ -925,34 +921,35 @@ garch_s <- function(mR, rdata = NULL, options = list())
   mR <- mR - mean(mR)
   X <- intraday_regressors(D, N = N, order = 2, almond = FALSE, P1 = op$P1,
                            P2 = op$P2)
-  spec <- ugarchspec(variance.model = list(model = op$model, 
-                                           external.regressors = X,
-                                           garchOrder = op$order),                    
-                     mean.model = list(include.mean = FALSE),
-                                       distribution.model = op$dist)
+  spec <- rugarch::ugarchspec(variance.model = list(model = op$model, 
+                                                    external.regressors = X,
+                                                    garchOrder = op$order),                    
+                              mean.model = list(include.mean = FALSE),
+                                                distribution.model = op$dist)
   if (is.null(rdata)) {
     cat(paste("Fitting", op$model, "model..."))
-    fit <- tryCatch(ugarchfit(spec = spec, data = as.numeric(t(mR)), 
-                              solver = "nloptr", 
-                              solver.control = op$solver.control),
+    fit <- tryCatch(rugarch::ugarchfit(spec = spec, data = as.numeric(t(mR)), 
+                                       solver = "nloptr", 
+                                       solver.control = op$solver.control),
                     error = function(e) e,
                     warning = function(w) w)
     if (inherits(fit, what = c("error", "warning"))) {
       stop(paste("GARCH optimization routine did not converge.\n", 
                  "Message returned by ugarchfit:\n", fit))
     }
-    spot <- as.numeric(sigma(fit))
+    spot <- as.numeric(rugarch::sigma(fit))
   } else {
     cat(paste("Fitting", op$model, "model..."))
-    fit <- tryCatch(ugarchfit(spec = spec, data = rdata, solver = "nloptr",
-                              solver.control = op$solver.control), 
+    fit <- tryCatch(rugarch::ugarchfit(spec = spec, data = rdata, 
+                                       solver = "nloptr",
+                                       solver.control = op$solver.control), 
                     error = function(e) e,
                     warning = function(w) w)
     if (inherits(fit, what = c("error", "warning"))) {
       stop(paste("GARCH optimization routine did not converge.\n", 
                  "Message returned by ugarchfit:\n", fit))
     } 
-    spot <- sigma(fit)
+    spot <- rugarch::sigma(fit)
   }
   out <- list(spot = spot, ugarchfit = fit)
   class(out) <- "spotvol"
@@ -960,28 +957,33 @@ garch_s <- function(mR, rdata = NULL, options = list())
 }
     
 #' @export
-plot.spotvol <- function(sv, length = NULL)
+plot.spotvol <- function(x, ...)
 {
+  options <- list(...)
   plottable <- c("spot", "periodic", "daily")
-  elements <- names(sv)
+  elements <- names(x)
   nplots <- sum(is.element(plottable, elements))
   
   if (nplots == 3) {
     par(mar = c(3, 3, 3, 1))
     layout(matrix(c(1,2,1,3), nrow = 2))
   }
-  spot <- as.numeric(t(sv$spot))
-  if(is.null(length)) 
+  spot <- as.numeric(t(x$spot))
+  
+  if(is.element("length", names(options))) {
+    length = options$length
+  } else {
     length = length(spot)
+  }
   
   plot(spot[1:length], type = "l", xlab = "", ylab = "")
   title(main = "Spot volatility")
   if ("cp" %in% elements)
-    abline(v = sv$cp[-1], lty = 3, col = "gray70")
+    abline(v = x$cp[-1], lty = 3, col = "gray70")
   if ("periodic" %in% elements) {
-    periodic <- as.numeric(t(sv$periodic))
+    periodic <- as.numeric(t(x$periodic))
     if (inherits(data, what = "xts")) {
-      intraday <- time(sv$periodic)
+      intraday <- time(x$periodic)
       plot(x = intraday, y = periodic, type = "l", xlab = "", ylab = "")
     } else {
       plot(periodic, type = "l", xlab = "", ylab = "") 
@@ -989,9 +991,9 @@ plot.spotvol <- function(sv, length = NULL)
     title(main = "Intraday periodicity")
   }
   if ("daily" %in% elements) {
-    daily <- as.numeric(t(sv$daily))
+    daily <- as.numeric(t(x$daily))
     if (inherits(data, what = "xts")) {
-      dates <- as.Date(time(sv$daily))
+      dates <- as.Date(time(x$daily))
       plot(x = dates, y = daily, type = "l", xlab = "", ylab = "")
     } else {
       plot(daily, type = "l", xlab = "", ylab = "")
