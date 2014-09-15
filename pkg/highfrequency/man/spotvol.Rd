@@ -16,7 +16,7 @@ assumed to be equispaced, with the time between them specified by \code{on}
 and \code{k}. Return data should be in matrix form, where each row
 corresponds to a day, and each column to an intraday period. The output
 will be in the same form as the input (\code{xts} or
-\code{matrix}/\code{numeric}).}
+\code{matrix}/\code{numeric}).} 
 
 \item{method}{specifies which method will be used to estimate the spot
 volatility. Options include \code{"detper"} and \code{"stochper"}.
@@ -317,7 +317,7 @@ lines(as.numeric(vol2$spot[1:780]), col="red")
 legend("topright", c("detper", "stochper"), col = c("black", "red"), lty=1)}
 
 # Various kernel estimates
-
+\donttest{
 h1 = bw.nrd0((1:nrow(sample_returns_5min))*(5*60))
 vol3 <- spotvol(sample_returns_5min, method = "kernel", h = h1)
 vol4 <- spotvol(sample_returns_5min, method = "kernel", est = "quarticity")
@@ -326,7 +326,7 @@ plot(vol3, length = 2880)
 lines(as.numeric(t(vol4$spot))[1:2880], col="red")
 lines(as.numeric(t(vol5$spot))[1:2880], col="blue")
 legend("topright", c("h = simple estimate", "h = quarticity corrected",
-       "h = crossvalidated"), col = c("black", "red", "blue"), lty=1)
+       "h = crossvalidated"), col = c("black", "red", "blue"), lty=1)}
 \dontshow{par(par.def)}
 # Piecewise constant volatility, using an example from Fried (2012)
 \donttest{
