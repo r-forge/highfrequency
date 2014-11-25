@@ -1,7 +1,7 @@
 Package: highfrequency
 Version: 0.4
 Date: 2014-11-25
-Title: highfrequency: Tools for the analysis of highfrequency data in R
+Title: Tools for Highfrequency Data Analysis 
 Author: Kris Boudt [aut, cre], Jonathan Cornelissen [aut], Scott Payseur [aut], Giang Nguyen [ctb], Maarten Schermers [ctb] 
 Maintainer: Kris Boudt
         <Kris.Boudt@econ.kuleuven.be>
