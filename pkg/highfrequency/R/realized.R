@@ -106,7 +106,7 @@ ROWVar = function(rdata, seasadjR = NULL, wfunction = "HR" , alphaMCD = 0.75, al
     
     rdata = as.vector(rdata); seasadjR = as.vector(seasadjR);
     intraT = length(rdata); N=1;
-    MCDcov = as.vector(covMcd( rdata , use.correction = FALSE )$raw.cov)
+    MCDcov = as.vector(robustbase::covMcd( rdata , use.correction = FALSE )$raw.cov)
     outlyingness = seasadjR^2/MCDcov    
     k = qchisq(p = 1 - alpha, df = N)
     outlierindic = outlyingness > k
@@ -356,10 +356,10 @@ cfactor_RTSCV = function(eta=9){
     # 
     rho = 0.001
     R = matrix( c(1,rho,rho,1) , ncol = 2 ) 
-    int1 <- function(x) {    dmvnorm(x,sigma=R) }
+    int1 <- function(x) {    mvtnorm::dmvnorm(x,sigma=R) }
     num = adaptIntegrate(int1, c(-3,-3), c(3,3), tol=1e-4)$integral
-    int2 <- function(x) {  x[1]*x[2]*dmvnorm(x,sigma=R) }
-    denom = adaptIntegrate(int2, c(-3,-3), c(3,3), tol=1e-4)$integral
+    int2 <- function(x) {  x[1]*x[2]*mvtnorm::dmvnorm(x,sigma=R) }
+    denom = cubature::adaptIntegrate(int2, c(-3,-3), c(3,3), tol=1e-4)$integral
     c2 = rho*num/denom   
     return( (c1+c2)/2 )
 }
@@ -2235,8 +2235,8 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
   if( onefile == FALSE ){
     
     # Create trading dates:
-    dates = timeSequence(from, to, format = "%Y-%m-%d", FinCenter = "GMT")
-    dates = dates[isBizday(dates, holidays = holidayNYSE(1950:2030))];
+    dates = timeDate::timeSequence(from, to, format = "%Y-%m-%d", FinCenter = "GMT")
+    dates = dates[isBizday(dates, holidays = timeDate::holidayNYSE(1950:2030))];
     
     # Create folder structure for saving:
     if (dir) { dir.create(datadestination); for (i in 1:length(dates)) {dirname = paste(datadestination, "/", as.character(dates[i]), sep = ""); dir.create(dirname)    } }
@@ -2339,8 +2339,9 @@ TAQLoad = function(tickers,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,vari
 uniTAQload = function(ticker,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,variables=NULL){
   ##Function to load the taq data from a certain stock 
   #From&to (both included) should be in the format "%Y-%m-%d" e.g."2008-11-30"
-  dates = timeSequence(as.character(from),as.character(to), format = "%Y-%m-%d", FinCenter = "GMT")
-  dates = dates[isBizday(dates, holidays = holidayNYSE(1960:2040))];
+  require("timeDate")
+  dates = timeDate::timeSequence(as.character(from),as.character(to), format = "%Y-%m-%d", FinCenter = "GMT")
+  dates = dates[timeDate::isBizday(dates, holidays = timeDate::holidayNYSE(1960:2040))];
   
   if(trades){ tdata=NULL;
               totaldata=NULL;
@@ -3099,12 +3100,12 @@ p_return_abs <- function (data)
 
 
 tradesCleanup = function(from,to,datasource,datadestination,ticker,exchanges,tdataraw=NULL,report=TRUE,selection="median",...){
-  
+  require('timeDate')
   nresult = rep(0, 5)
   if(!is.list(exchanges)){ exchanges = as.list(exchanges)}
   if (is.null(tdataraw)) {
-    dates = timeSequence(from, to, format = "%Y-%m-d")
-    dates = dates[isBizday(dates, holidays=holidayNYSE(1960:2040))]
+    dates = timeDate::timeSequence(from, to, format = "%Y-%m-d")
+    dates = dates[timeDate::isBizday(dates, holidays=timeDate::holidayNYSE(1960:2040))]
     for (j in 1:length(dates)) {
       datasourcex = paste(datasource, "/", dates[j], sep = "")
       datadestinationx = paste(datadestination, "/", dates[j], sep = "")

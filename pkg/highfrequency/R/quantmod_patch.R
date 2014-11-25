@@ -202,6 +202,71 @@ has.Chg <- function(x, which=FALSE) {
   ifelse(which, loc, FALSE)
 }
 
+has.Cl <- function (x, which = FALSE){
+  colAttr <- attr(x, "Cl")
+  if (!is.null(colAttr)) 
+    return(if (which) colAttr else TRUE)
+  loc <- grep("Close", colnames(x), ignore.case = TRUE)
+  if (!identical(loc, integer(0))) {
+    return(if (which) loc else TRUE)
+  }
+  else FALSE
+}
+
+has.Ad<-function (x, which = FALSE){
+  colAttr <- attr(x, "Ad")
+  if (!is.null(colAttr)) 
+    return(if (which) colAttr else TRUE)
+  loc <- grep("Adjusted", colnames(x), ignore.case = TRUE)
+  if (!identical(loc, integer(0))) {
+    return(if (which) loc else TRUE)
+  }
+  else FALSE
+}
+
+has.Hi<-function (x, which = FALSE) {
+  colAttr <- attr(x, "Hi")
+  if (!is.null(colAttr)) 
+    return(if (which) colAttr else TRUE)
+  loc <- grep("High", colnames(x), ignore.case = TRUE)
+  if (!identical(loc, integer(0))) {
+    return(if (which) loc else TRUE)
+  }
+  else FALSE
+}
+
+has.Lo<-function (x, which = FALSE){
+  colAttr <- attr(x, "Lo")
+  if (!is.null(colAttr)) 
+    return(if (which) colAttr else TRUE)
+  loc <- grep("Low", colnames(x), ignore.case = TRUE)
+  if (!identical(loc, integer(0))) {
+    return(if (which) loc else TRUE)
+  }
+  else FALSE
+}
+
+has.Op<-function (x, which = FALSE) {
+  colAttr <- attr(x, "Op")
+  if (!is.null(colAttr)) 
+    return(if (which) colAttr else TRUE)
+  loc <- grep("Open", colnames(x), ignore.case = TRUE)
+  if (!identical(loc, integer(0))) {
+    return(if (which) loc else TRUE)
+  }
+  else FALSE
+}
+
+has.Vo<-function (x, which = FALSE){
+  colAttr <- attr(x, "Vo")
+  if (!is.null(colAttr)) 
+    return(if (which) colAttr else TRUE)
+  loc <- grep("Volume", colnames(x), ignore.case = TRUE)
+  if (!identical(loc, integer(0))) {
+    return(if (which) loc else TRUE)
+  }
+  else FALSE
+}
 #has.Un <- function(x, which=FALSE) {
 #	loc <- grep("Unadj", colnames(x), ignore.case = TRUE)
 #    if (!identical(loc, integer(0))) 
