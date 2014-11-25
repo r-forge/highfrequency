@@ -357,7 +357,7 @@ cfactor_RTSCV = function(eta=9){
     rho = 0.001
     R = matrix( c(1,rho,rho,1) , ncol = 2 ) 
     int1 <- function(x) {    mvtnorm::dmvnorm(x,sigma=R) }
-    num = cubature::aadaptIntegrate(int1, c(-3,-3), c(3,3), tol=1e-4)$integral
+    num = cubature::adaptIntegrate(int1, c(-3,-3), c(3,3), tol=1e-4)$integral
     int2 <- function(x) {  x[1]*x[2]*mvtnorm::dmvnorm(x,sigma=R) }
     denom = cubature::adaptIntegrate(int2, c(-3,-3), c(3,3), tol=1e-4)$integral
     c2 = rho*num/denom   
