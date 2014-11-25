@@ -3220,7 +3220,7 @@ tradesCleanup = function(from,to,datasource,datadestination,ticker,exchanges,tda
 quotesCleanup = function(from,to,datasource,datadestination,ticker,exchanges, qdataraw=NULL,report=TRUE,selection="median",maxi=50,window=50,type="advanced",rmoutliersmaxi=10,...){
   nresult = rep(0,7);
   if(is.null(qdataraw)){
-    dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
+    dates = timeDate::timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
     dates = dates[timeDate::isBizday(dates, holidays = timeDate::holidayNYSE(2004:2010))];
     
     for(j in 1:length(dates)){
