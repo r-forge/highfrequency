@@ -357,7 +357,7 @@ cfactor_RTSCV = function(eta=9){
     rho = 0.001
     R = matrix( c(1,rho,rho,1) , ncol = 2 ) 
     int1 <- function(x) {    mvtnorm::dmvnorm(x,sigma=R) }
-    num = adaptIntegrate(int1, c(-3,-3), c(3,3), tol=1e-4)$integral
+    num = cubature::aadaptIntegrate(int1, c(-3,-3), c(3,3), tol=1e-4)$integral
     int2 <- function(x) {  x[1]*x[2]*mvtnorm::dmvnorm(x,sigma=R) }
     denom = cubature::adaptIntegrate(int2, c(-3,-3), c(3,3), tol=1e-4)$integral
     c2 = rho*num/denom   
@@ -1196,7 +1196,7 @@ rOWCov = function (rdata, cor=FALSE, align.by=NULL,align.period=NULL, makeReturn
         select = c(1:N)[perczeroes < 0.5]
         seasadjRselect = seasadjR[, select]
         N = ncol(seasadjRselect)
-        MCDobject = try(covMcd(x = seasadjRselect, alpha = alphaMCD))
+        MCDobject = try(robustbase::covMcd(x = seasadjRselect, alpha = alphaMCD))
         if (length(MCDobject$raw.mah) > 1) {
             betaMCD = 1-alphaMCD; asycor = betaMCD/pchisq( qchisq(betaMCD,df=N),df=N+2 )
             MCDcov = (asycor*t(seasadjRselect[MCDobject$best,])%*%seasadjRselect[MCDobject$best,])/length(MCDobject$best);  
@@ -2236,7 +2236,7 @@ convert = function(from, to, datasource, datadestination, trades = TRUE,
     
     # Create trading dates:
     dates = timeDate::timeSequence(from, to, format = "%Y-%m-%d", FinCenter = "GMT")
-    dates = dates[isBizday(dates, holidays = timeDate::holidayNYSE(1950:2030))];
+    dates = dates[timeDate::isBizday(dates, holidays = timeDate::holidayNYSE(1950:2030))];
     
     # Create folder structure for saving:
     if (dir) { dir.create(datadestination); for (i in 1:length(dates)) {dirname = paste(datadestination, "/", as.character(dates[i]), sep = ""); dir.create(dirname)    } }
@@ -3221,7 +3221,7 @@ quotesCleanup = function(from,to,datasource,datadestination,ticker,exchanges, qd
   nresult = rep(0,7);
   if(is.null(qdataraw)){
     dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
-    dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
+    dates = dates[timeDate::isBizday(dates, holidays = timeDate::holidayNYSE(2004:2010))];
     
     for(j in 1:length(dates)){
       datasourcex = paste(datasource,"/",dates[j],sep="");
@@ -3293,8 +3293,8 @@ quotesCleanup = function(from,to,datasource,datadestination,ticker,exchanges, qd
 
 tradesCleanupFinal = function(from,to,datasource,datadestination,ticker,tdata=NULL,qdata=NULL,...){
   if(is.null(tdata)&is.null(qdata)){
-    dates = timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
-    dates = dates[isBizday(dates, holidays = holidayNYSE(2004:2010))];
+    dates = timeDate::timeSequence(from,to, format = "%Y-%m-%d", FinCenter = "GMT");
+    dates = dates[timeDate::isBizday(dates, holidays = timeDate::holidayNYSE(2004:2010))];
     
     for(j in 1:length(dates)){
       datasourcex = paste(datasource,"/",dates[j],sep="");
