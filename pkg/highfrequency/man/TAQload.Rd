@@ -56,7 +56,7 @@ datasource=datasource,variables=NULL)}
 #Load only price data for stocks AA and AAPL
 \dontrun{xx = TAQLoad(tickers=c("AA","AAPL"),from,to,trades=TRUE,
 quotes=FALSE,datasource=datasource,variables="PRICE")}
-\dontrun{head(xx);                                                                                                    }
-\dontrun{tail(xx);                                                                                                    }
+\dontrun{head(xx)};                                                                                                    }
+\dontrun{tail(xx)};                                                                                                    }
 }
 
