@@ -2,7 +2,7 @@ Package: highfrequency
 Version: 0.4
 Date: 2014-11-25
 Title: Tools For Highfrequency Data Analysis 
-Author: Kris Boudt [aut, cre], Jonathan Cornelissen [aut], Scott Payseur [aut], Giang Nguyen [ctb], Maarten Schermers [ctb] 
+Author: Kris Boudt [aut, cre], Jonathan Cornelissen [aut], Scott Payseur [aut], Giang Nguyen [ctb], Maarten Schermer [ctb] 
 Maintainer: Kris Boudt
         <Kris.Boudt@econ.kuleuven.be>
 Description: Provide functionality to manage, clean and match highfrequency trades and quotes data, calculate various liquidity measures, estimate and forecast volatility, and investigate microstructure noise and intraday periodicity. 
