@@ -3659,7 +3659,7 @@ rmOutliers = function (qdata, maxi = 10, window = 50, type = "advanced")
   midquote = as.vector(as.numeric(qdata$BID) + as.numeric(qdata$OFR))/2;
   mad_all = mad(midquote);
   
-  midquote = xts(midquote,order.by = index(qdata))
+  midquote = zoo(midquote,order.by = index(qdata))
   
   if (mad_all == 0) {
     m = as.vector(as.numeric(midquote))
@@ -3765,25 +3765,32 @@ period.apply2 = function (x, INDEX, FUN2, ...)
 }
 
 ## AGGREGATION;
-aggregatets = function (ts, FUN = "previoustick", on = "minutes", k = 1, weights = NULL,dropna=FALSE) 
+aggregatets = function (ts, FUN = "previoustick", on = "minutes", k = 1, weights = NULL, 
+                        dropna = FALSE) 
 {
-  makethispartbetter = ((!is.null(weights))| on=="days"|on=="weeks"| (FUN!="previoustick")|dropna);
-  if(makethispartbetter)  {
-    
-    FUN = match.fun(FUN);
-    
+  tz = indexTZ(ts)
+  if(tz=="" | is.null(tz)){tz="GMT"}
+  makethispartbetter = ((!is.null(weights)) | on == "days" | 
+                          on == "weeks" | (FUN != "previoustick") | dropna)
+  if (makethispartbetter) {
+    FUN = match.fun(FUN)
     if (is.null(weights)) {
       ep = endpoints(ts, on, k)
-      if(dim(ts)[2]==1){ ts2 = period.apply(ts, ep, FUN) }
-      if(dim(ts)[2]>1){  ts2 = xts(apply(ts,2,FUN=period.apply2,FUN2=FUN,INDEX=ep),order.by=index(ts)[ep],)}
+      if (dim(ts)[2] == 1) {
+        ts2 = period.apply(ts, ep, FUN)
+      }
+      if (dim(ts)[2] > 1) {
+        ts2 = xts(apply(ts, 2, FUN = period.apply2, FUN2 = FUN, 
+                        INDEX = ep), order.by = index(ts)[ep], )
+      }
     }
     if (!is.null(weights)) {
       tsb = cbind(ts, weights)
       ep = endpoints(tsb, on, k)
-      ts2 = period.apply(tsb, ep, FUN = match.fun(weightedaverage) )
+      ts2 = period.apply(tsb, ep, FUN = match.fun(weightedaverage))
     }
     if (on == "minutes" | on == "mins" | on == "secs" | on == 
-      "seconds") {
+          "seconds") {
       if (on == "minutes" | on == "mins") {
         secs = k * 60
       }
@@ -3791,26 +3798,25 @@ aggregatets = function (ts, FUN = "previoustick", on = "minutes", k = 1, weights
         secs = k
       }
       a = .index(ts2) + (secs - .index(ts2)%%secs)
-      ts3 = .xts(ts2, a,tzone="GMT")
+      ts3 = .xts(ts2, a, tzone = tz)
     }
     if (on == "hours") {
       secs = 3600
       a = .index(ts2) + (secs - .index(ts2)%%secs)
-      ts3 = .xts(ts2, a,tzone="GMT")
+      ts3 = .xts(ts2, a, tzone = tz)
     }
     if (on == "days") {
       secs = 24 * 3600
       a = .index(ts2) + (secs - .index(ts2)%%secs) - (24 * 
-        3600)
-      ts3 = .xts(ts2, a,tzone="GMT")
+                                                        3600)
+      ts3 = .xts(ts2, a, tzone = tz)
     }
     if (on == "weeks") {
       secs = 24 * 3600 * 7
       a = (.index(ts2) + (secs - (.index(ts2) + (3L * 86400L))%%secs)) - 
         (24 * 3600)
-      ts3 = .xts(ts2, a,tzone="GMT")
+      ts3 = .xts(ts2, a, tzone = tz)
     }
-    
     if (!dropna) {
       if (on != "weeks" | on != "days") {
         if (on == "secs" | on == "seconds") {
@@ -3824,46 +3830,54 @@ aggregatets = function (ts, FUN = "previoustick", on = "minutes", k = 1, weights
         }
         by = paste(k, tby, sep = " ")
         allindex = as.POSIXct(base::seq(start(ts3), end(ts3), 
-                                         by = by))
+                                        by = by))
         xx = xts(rep("1", length(allindex)), order.by = allindex)
         ts3 = merge(ts3, xx)[, (1:dim(ts)[2])]
       }
     }
-    
-    index(ts3) = as.POSIXct(index(ts3));
-    return(ts3);
+    index(ts3) = as.POSIXct(index(ts3))
+    return(ts3)
   }
-  
-  if(!makethispartbetter){
-    if (on == "secs" | on == "seconds") { secs = k; tby = paste(k,"sec",sep=" ")}
-    if (on == "mins" | on == "minutes") { secs = 60*k; tby = paste(60*k,"sec",sep=" ")}
-    if (on == "hours") {secs = 3600*k; tby = paste(3600*k,"sec",sep=" ")}
-    
-    FUN = match.fun(FUN);
-    
-    g = base::seq(start(ts), end(ts), by = tby);
-    rawg = as.numeric(as.POSIXct(g,tz="GMT"));
-    newg = rawg + (secs - rawg%%secs);
-    g    = as.POSIXct(newg,origin="1970-01-01",tz="GMT");
-    ts3  = na.locf(merge(ts, zoo(, g)))[as.POSIXct(g,tz="GMT")]; 
-    return(ts3) 
+  if (!makethispartbetter) {
+    if (on == "secs" | on == "seconds") {
+      secs = k
+      tby = paste(k, "sec", sep = " ")
+    }
+    if (on == "mins" | on == "minutes") {
+      secs = 60 * k
+      tby = paste(60 * k, "sec", sep = " ")
+    }
+    if (on == "hours") {
+      secs = 3600 * k
+      tby = paste(3600 * k, "sec", sep = " ")
+    }
+    FUN = match.fun(FUN)
+    g = base::seq(start(ts), end(ts), by = tby)
+    rawg = as.numeric(as.POSIXct(g, tz = tz))
+    newg = rawg + (secs - rawg%%secs)
+    g = as.POSIXct(newg, origin = "1970-01-01", tz = tz)
+    ts3 = na.locf(merge(ts, zoo(, g)))[as.POSIXct(g, tz = tz)]
+    return(ts3)
   }
 }
+
 
 #PRICE (specificity: opening price and previoustick)
 
 aggregatePrice = function (ts, FUN = "previoustick", on = "minutes", k = 1,marketopen="09:30:00",marketclose = "16:00:00") 
 {
+  tz = indexTZ(ts)
+  if(tz=="" | is.null(tz)){tz="GMT"}
   ts2 = aggregatets(ts, FUN = FUN, on, k)
   date = strsplit(as.character(index(ts)), " ")[[1]][1]
   
   #open
-  a = as.POSIXct(paste(date, marketopen),tz="GMT")
+  a = as.POSIXct(paste(date, marketopen),tz=tz)
   b = as.xts(matrix(as.numeric(ts[1]),nrow=1), a)
   ts3 = c(b, ts2)
   
   #close
-  aa = as.POSIXct(paste(date, marketclose),tz="GMT")
+  aa = as.POSIXct(paste(date, marketclose),tz=tz)
   condition = index(ts3) < aa
   ts3 = ts3[condition]
   bb = as.xts(matrix(as.numeric(last(ts)),nrow=1), aa)
@@ -3875,18 +3889,20 @@ aggregatePrice = function (ts, FUN = "previoustick", on = "minutes", k = 1,marke
 #VOLUME: (specificity: always sum)
 agg_volume= function(ts, FUN = "sumN", on = "minutes", k = 5, includeopen = FALSE,marketopen="09:30:00",marketclose="16:00:00") 
 {
+  tz = indexTZ(ts)
+  if(tz=="" | is.null(tz)){tz="GMT"}
   if (!includeopen) {
     ts3 = aggregatets(ts, FUN = FUN, on, k)
   }
   if (includeopen) {
     ts2 = aggregatets(ts, FUN = FUN, on, k)
     date = strsplit(as.character(index(ts)), " ")[[1]][1]
-    a = as.POSIXct(paste(date, marketopen),tz="GMT")
+    a = as.POSIXct(paste(date, marketopen),tz=tz)
     b = as.xts(matrix(as.numeric(ts[1]),nrow=1), a)
     ts3 = c(b, ts2)
   }
   
-  aa = as.POSIXct(paste(date, marketclose),tz="GMT")
+  aa = as.POSIXct(paste(date, marketclose),tz=tz)
   condition = index(ts3) < aa
   ts4 = ts3[condition]
   
