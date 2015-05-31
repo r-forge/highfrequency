@@ -1429,7 +1429,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
 
 .SEheavyModel = function( paramsvector, data, p, q, backcast, LB, UB, compconst=FALSE, ...)
 {
-  require(numDeriv)
+  requireNamespace('numDeriv')
   K    = ncol(data);  #Number of series to model
   
   # Set lower and upper-bound if not specified:
@@ -1539,7 +1539,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
       
     }
     
-    require(sandwich);
+    requireNamespace('sandwich');
     fm = lm(m ~ 0); 
     It = try(sandwich::vcovHAC(fm))
     
@@ -1556,7 +1556,7 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
   
   invJ = try(solve(Jt))
   if( class(invJ) == "try-error"){
-    require("MASS")
+    requireNamespace("MASS")
     print("-1*Hessian is not invertible - generalized inverse is used")
     invJ = MASS::ginv(Jt)
   }

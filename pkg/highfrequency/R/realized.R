@@ -83,7 +83,7 @@ countzeroes = function( series )
 
 #Realized Outlyingness Weighted Variance (ROWVar):
 univariateoutlyingness = function(rdata,...){
-    require('robustbase');
+    requireNamespace('robustbase');
     if(hasArg(data)){ rdata = data }
     #computes outlyingness of each obs compared to row location and scale
     location = 0;
@@ -97,9 +97,9 @@ univariateoutlyingness = function(rdata,...){
 
 ROWVar = function(rdata, seasadjR = NULL, wfunction = "HR" , alphaMCD = 0.75, alpha = 0.001,...) 
 {
-    require('robustbase');
+    requireNamespace('robustbase');
     if(hasArg(data)){ rdata = data }
-    require(robustbase)
+    
     if (is.null(seasadjR)) {
         seasadjR = rdata;
     }
@@ -350,7 +350,7 @@ TSCov_bi = function (pdata1, pdata2, K = 300, J = 1)
 }
 
 cfactor_RTSCV = function(eta=9){
-    require('cubature'); require('mvtnorm')
+    requireNamespace('cubature'); requireNamespace('mvtnorm')
     # rho = 1
     c1 = pchisq(eta,df=1)/pchisq(eta,df=3) 
     # 
@@ -1188,7 +1188,7 @@ rOWCov = function (rdata, cor=FALSE, align.by=NULL,align.period=NULL, makeReturn
     if( n > 1 ){ 
         rdatacheck(rdata,multi=TRUE);
         
-        require(robustbase)
+        requireNamespace('robustbase')
         rdata = as.matrix(rdata); seasadjR = as.matrix(seasadjR);
         intraT = nrow(rdata)
         N = ncol(rdata)
@@ -2018,7 +2018,10 @@ label.pos = c(4, 2), cex.caption = 1){
     g_range[1] = 0.95*g_range[1]; g_range[2]= 1.05 * g_range[2]; 
     #ind = seq(1,length(fitted),length.out=5);
     title = paste("Observed and forecasted RV based on HAR Model:",type);
-    plot.zoo(observed,col="red",lwd=2,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
+    #plot.xts(observed,col="red",lwd=2,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
+    
+    # There is an error in plot.xts that prevents colors from being passed.
+    plot.xts(observed,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
     #  axis(1,time(b)[ind], format(time(b)[ind],), las=2, cex.axis=0.8); not used anymore
     #  axis(2);
     lines(fitted,col="blue",lwd=2);
@@ -2229,7 +2232,7 @@ makeXtsQuotes = function( qdata, format = format){
 convert = function(from, to, datasource, datadestination, trades = TRUE, 
                    quotes = TRUE, ticker, dir = FALSE, extension = "txt", header = FALSE, 
                    tradecolnames = NULL, quotecolnames = NULL, format = "%Y%m%d %H:%M:%S", onefile=FALSE){  
-  require("timeDate")
+  requireNamespace("timeDate")
   
   #############  1.A the data is in the "RTAQ folder" sturcture ##############
   if( onefile == FALSE ){
@@ -2339,7 +2342,7 @@ TAQLoad = function(tickers,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,vari
 uniTAQload = function(ticker,from,to,trades=TRUE,quotes=FALSE,datasource=NULL,variables=NULL){
   ##Function to load the taq data from a certain stock 
   #From&to (both included) should be in the format "%Y-%m-%d" e.g."2008-11-30"
-  require("timeDate")
+  requireNamespace("timeDate")
   dates = timeDate::timeSequence(as.character(from),as.character(to), format = "%Y-%m-%d", FinCenter = "GMT")
   dates = dates[timeDate::isBizday(dates, holidays = timeDate::holidayNYSE(1960:2040))];
   
@@ -2634,7 +2637,7 @@ center = function()
  ###### Liquidity functions formerly in in RTAQ  ######
 .check_data = function(data){ 
   # FUNCTION sets column names according to RTAQ format using quantmod conventions, such that all the other functions find the correct information.
-  require('quantmod');
+  requireNamespace('quantmod');
   # First step: assign the xts attributes:
   data = set.AllColumns(data);
   
@@ -3100,7 +3103,7 @@ p_return_abs <- function (data)
 
 
 tradesCleanup = function(from,to,datasource,datadestination,ticker,exchanges,tdataraw=NULL,report=TRUE,selection="median",...){
-  require('timeDate')
+  requireNamespace('timeDate')
   nresult = rep(0, 5)
   if(!is.list(exchanges)){ exchanges = as.list(exchanges)}
   if (is.null(tdataraw)) {
