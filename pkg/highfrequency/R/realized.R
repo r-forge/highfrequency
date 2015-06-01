@@ -2026,7 +2026,7 @@ label.pos = c(4, 2), cex.caption = 1){
     #  axis(2);
     lines(observed,col="red",lwd=2);
     lines(fitted,col="blue",lwd=2);
-    legend("topleft", c("Observed RV","Forecasted RV"),  col=c("red","blue"),lty=1, lwd=2, bty="n"); 
+   # legend("topleft", c("Observed RV","Forecasted RV"),  col=c("red","blue"),lty=1, lwd=2, bty="n"); 
 }
 
 ##################################################################################################

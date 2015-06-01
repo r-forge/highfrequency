@@ -2,7 +2,7 @@ Package: highfrequency
 Version: 0.41
 Date: 2015-05-31
 Title: Tools for Highfrequency Data Analysis 
-Author@R: c(person("Kris", "Boudt", role = c("aut", "cre"),
+Authors@R: c(person("Kris", "Boudt", role = c("aut", "cre"),
   	     email = "Kris.Boudt@econ.kuleuven.be"),
 	      person("Jonathan", "Cornelissen", role = "aut"),
         person("Scott", "Payseur", role = "aut", email = "scott@statblocks.com"),
