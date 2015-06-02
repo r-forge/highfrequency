@@ -2008,6 +2008,7 @@ qqline = TRUE, cook.levels = c(0.5, 1), add.smooth = getOption("add.smooth"),
 label.pos = c(4, 2), cex.caption = 1){ 
     observed = x$model$y;
     fitted   = x$fitted.values;
+    names(fitted) = NULL;
     dates    = x$dates;
     dates    = as.POSIXct(dates);
     observed = xts(observed, order.by=dates);
@@ -2021,12 +2022,14 @@ label.pos = c(4, 2), cex.caption = 1){
     #plot.xts(observed,col="red",lwd=2,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
     
     # There is an error in plot.xts that prevents colors from being passed.
-    plot.xts(observed,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
     #  axis(1,time(b)[ind], format(time(b)[ind],), las=2, cex.axis=0.8); not used anymore
     #  axis(2);
-    lines(observed,col="red",lwd=2);
-    lines(fitted,col="blue",lwd=2);
-   # legend("topleft", c("Observed RV","Forecasted RV"),  col=c("red","blue"),lty=1, lwd=2, bty="n"); 
+      observed <- as.zoo(observed)
+      fitted <- as.zoo(fitted)
+      plot.zoo(observed,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility", col='red',lwd=2); 
+      lines(fitted,col="blue",lwd=2);
+      legend("topleft", c("Observed RV","Forecasted RV"),  col=c("red","blue"),lty=1, lwd=2, bty="n"); 
+    
 }
 
 ##################################################################################################
