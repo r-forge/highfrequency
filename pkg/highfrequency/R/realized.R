@@ -2025,16 +2025,24 @@ label.pos = c(4, 2), cex.caption = 1){
     #  axis(1,time(b)[ind], format(time(b)[ind],), las=2, cex.axis=0.8); not used anymore
     #  axis(2);
     
-    plot.xts(observed,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
+    print(packageVersion('xts'))
     
-    if(packageVersion('xts')<='0.9.7'){
+   
+    
+    if(packageVersion('xts')<='0.9-7'){
+      plot.xts(observed,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility"); 
       lines(observed,col="red",lwd=2);
       lines(fitted,col="blue",lwd=2);
+      legend("topleft", c("Observed RV","Forecasted RV"),  col=c("red","blue"),lty=1, lwd=2, bty="n"); 
     }else{
-      lines(observed,col="red",lwd=2, on=1);
+      plot.xts(observed,main=title, ylim=g_range,xlab="Time",ylab="Realized Volatility",  col="red"); 
       lines(fitted,col="blue",lwd=2, on=1);
+      addLegend("topright", on=1, 
+                legend.names =c("Observed RV","Forecasted RV"), 
+                lty=c(1, 1), lwd=c(2, 2),
+                col=c("blue", "red"))
     }     
-    legend("topleft", c("Observed RV","Forecasted RV"),  col=c("red","blue"),lty=1, lwd=2, bty="n"); 
+    
     
     
 }
