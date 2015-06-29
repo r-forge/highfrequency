@@ -98,6 +98,8 @@ rQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALS
 
 ####Realized quadpower variation of highfrequency return series####
 
+##Revise current realized quad-power variation function: 
+
 rQPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,...)
 {
   if (hasArg(data)) 
@@ -124,7 +126,7 @@ rQPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
     q      = as.numeric(rdata)
     q      = abs(rollapply(q,width=4,FUN=prod,align="left"))
     N      = length(q)+3
-    rQPVar = N/(N-3)*pi^2/4*sum(q)
+    rQPVar = N/(N - 3)* (2^(1/4) * gamma(3/4)/gamma(1/2))^(-4)*sum(q^(1/2))
     return(rQPVar)
   }
 }
@@ -157,8 +159,72 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
     q      = as.numeric(rdata)
     q      = abs(rollapply(q,width = 3, FUN = prod, align = "left"))
     N      = length(q)+2
-    rTPVar = N/(N-2)*gamma(1/2)^2/(4*gamma(7/6)^2)*sum(q^(4/3))
+    rTPVar = N/(N - 2) * (2^(1/3) * gamma(5/6)/gamma(1/2))^(-3) *sum(q^(2/3))
     return(rTPVar)
+  }
+}
+
+##Create new function: realized Tri-power quarticity function: 
+rTPQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,...)
+{
+  if (hasArg(data)) 
+  {
+    rdata = data
+  }
+  multixts = .multixts(rdata)
+  if (multixts) 
+  {
+    result = apply.daily(rdata, rTPQuar, align.by, align.period,
+                         makeReturns)
+    return(result)
+  }
+  if (!multixts) 
+  {
+    if ((!is.null(align.by)) && (!is.null(align.period))) {
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
+    }
+    if (makeReturns) 
+    {
+      rdata = makeReturns(rdata)
+    }
+    
+    q      = as.numeric(rdata)
+    q      = abs(rollapply(q,width = 3, FUN = prod, align = "left"))
+    N      = length(q)+2
+    rTPQuar = (N^2)/(N - 2)*(2^(2/3)*gamma(7/6)/gamma(1/2))^(-3) *sum(q^(4/3))
+    return(rTPQuar)
+  }
+}
+
+##Create new function: realized Quad-power quarticity function: 
+rQPQuar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FALSE,...)
+{
+  if (hasArg(data)) 
+  {
+    rdata = data
+  }
+  multixts = .multixts(rdata)
+  if (multixts) 
+  {
+    result = apply.daily(rdata, rQPQuar, align.by, align.period,
+                         makeReturns)
+    return(result)
+  }
+  if (!multixts) 
+  {
+    if ((!is.null(align.by)) && (!is.null(align.period))) {
+      rdata = .aggregatets(rdata, on = align.by, k = align.period)
+    }
+    if (makeReturns) 
+    {
+      rdata = makeReturns(rdata)
+    }
+    
+    q      = as.numeric(rdata)
+    q      = abs(rollapply(q,width = 4, FUN = prod, align = "left"))
+    N      = length(q)+3
+    rQPQuar = (N^2)/(N - 3)*(2^(1/2)*gamma(1)/gamma(1/2))^(-4) *sum(q);
+    return(rQPQuar)
   }
 }
 
@@ -171,7 +237,7 @@ rTPVar = function(rdata, align.by = NULL, align.period = NULL, makeReturns = FAL
 #2) standard error of IVestimator;
 #3) confidence band of IVestimator. 
 
-ivInference = function(rdata, IVestimator = "RV", IQestimator = "rQuar", confidence = 0.95, align.by = NULL, align.period = NULL, makeReturns = FALSE, ...)
+ivInference = function(rdata, IVestimator = "RV", IQestimator = "TPQ", confidence = 0.95, align.by = NULL, align.period = NULL, makeReturns = FALSE, ...)
 {
   if (hasArg(data)){ rdata = data  }
   
@@ -217,11 +283,12 @@ ivInference = function(rdata, IVestimator = "RV", IQestimator = "rQuar", confide
 }
 
 
+
 ####BNSjump-test: Barndorff- Nielsen and Shephard tests for the presence of jumps 
 #in the price series.
 # It includes option of corrected threshold bipower variation (CTBV).
 
-BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TP", type= "linear", logtransform= FALSE, 
+BNSjumptest = function(rdata, IVestimator= "BV", IQestimator= "TPQ", type= "linear", logtransform= FALSE, 
                        max= FALSE, align.by= NULL, align.period= NULL, makeReturns = FALSE, ...)
 {
   if (hasArg(data)){  rdata = data  }
@@ -820,11 +887,14 @@ rBeta = function(rdata, rindex, RCOVestimator= "rCov", RVestimator= "RV", makeRe
 {
   switch(IQestimator,
          rQuar  = rQuar (rdata),
-         QP     = rQPVar(rdata),
-         TP     = rTPVar(rdata),
+         QPV    = rQPVar(rdata),
+         TPV    = rTPVar(rdata),
+         TPQ    = rTPQuar(rdata),
+         QPQ    = rQPQuar(rdata),
          minRQ  = minRQ (rdata),
          medRQ  = medRQ (rdata))
 }
+
 
 
 ##Standard error of IVestimator: 
