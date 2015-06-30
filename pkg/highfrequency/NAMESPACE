@@ -68,7 +68,9 @@ rTPVar,
 heavyModelC,
 spotvol,
 getPrice,
-has.Qty
+has.Qty,
+rTPQuar, 
+rQPQuar
 )#end exported function
 
 S3method(print, harModel);
