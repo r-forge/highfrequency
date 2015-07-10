@@ -33,7 +33,7 @@ in which,
 }
 
 \usage{
-ivInference (rdata, IVestimator="RV", IQestimator="rQuar", confidence=0.95, 
+ivInference (rdata, IVestimator="RV", IQestimator="TPQ", confidence=0.95, 
             align.by= NULL, align.period = NULL, makeReturns = FALSE, ...)
 }
 
